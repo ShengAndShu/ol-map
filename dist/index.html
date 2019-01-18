@@ -1,0 +1,150 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>map</title>
+    <style>
+        #map {
+            width: 100%;
+            height: 550px;
+        }
+
+        #popup {
+            display: none;
+            position: absolute;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, .6);
+            color: #fff;
+        }
+
+        .cancel {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .cancel:after {
+            content: 'X';
+        }
+    </style>
+</head>
+
+<body>
+    <button onclick="myMap.renderPoint()">打点</button>
+    <button onclick="myMap.renderArea()">渲染区域</button>
+    <button onclick="myMap.renderHeatLayer()">热力图</button>
+    <button onclick="myMap.bubbleOverlay(data)">冒泡</button>
+    <button onclick="myMap.startTrail()">轨迹播放</button>
+    <button onclick="myMap.stopTrail()">暂停轨迹播放</button>
+    <button onclick="myMap.continueTrail()">继续轨迹播放</button>
+    <button onclick="myMap.startDraw('circle')">画区</button>
+    <button onclick="myMap.removeAllFeature();myMap.removeAllArea();">清空画布</button>
+    <button onclick="changeSize()">改变尺寸</button>
+    <button onclick="myMap.startEffectLine()">线动画</button>
+    <div id="map"></div>
+    <!--点详情弹框-->
+    <div id="popup">
+        <div class="content"></div>
+        <a class="cancel" onclick="myMap.closePointModal()"></a>
+    </div>
+
+    <script>
+        window.onload = function () {
+            const dataType = ['cr', 'sms', 'lu'];
+            const type = ['unOperate', 'operated'];
+            // 数据模拟
+            function getData(isAgg, num) {
+                const data = [];
+                for (let i = 0; i < num; i++) {
+                    data[i] = {
+                        'prop_crId': Math.random(),
+                        'gpsPosition': isAgg ? JSON.stringify([Math.random() * 180, Math.random() * 90]) : '',
+                        'aggreCount': isAgg ? Math.ceil(Math.random() * 10) : 1,
+                        'gps': JSON.stringify([Math.random() * 180, Math.random() * 60]),
+                        'type': type[Math.floor(Math.random())],
+                        'prop_dataType': dataType[Math.floor(Math.random() * 2)]
+                    };
+                }
+                return data;
+            }
+
+            window.aggreData = getData(true, 100);    // 带有聚合点的数据
+            window.data = getData(false, 100);        // 无聚合点数据（轨迹播放用）
+
+            // 组件的使用方法与echarts相近
+            window.myMap = olMap.init('map');
+            const option = {
+                useOSM: true,
+                mapCenter: [97.03125, 29.362721750200926],
+                data: aggreData,
+                draw: {
+                    showArea: true,
+                    showMultiArea: false
+                },
+                area: {
+                    // type: 'bigscreen',
+                    showTooltip: true,
+                    showCancelBtn: true,
+                    showSearchBtn: true,
+                    areaData: [{
+                        areaType: 2,
+                        areaName: '圆形',
+                        areaDetail: '圆形区域详情',
+                        center: '80, 30',
+                        radius: '2000'
+                    }, {
+                        areaLocation: "-90,60,-90,20,90,20,90,60",
+                        areaName: '多边形',
+                        areaDetail: '多边形区域详情'
+                    }]
+                },
+                pointModal: {
+                    autoClose: 'zoom',
+                    autoPan: false
+                },
+                effectLine: {
+                    data: [
+                        {label: '1', coords: [[20, 20], [60, 30]]},
+                        {label: '2222', coords: [[30, 40], [60, 30]]}
+                    ]
+                }
+            };
+            myMap.setOption(option);
+            myMap.on('pointclick', (ev) => {
+                const gps = ev.N.aggreGPS;
+                const popup = document.querySelector('#popup');
+                const content = document.querySelector('.content');
+                myMap.renderPointModal(gps, 'popup');
+                popup.style.display = 'block';
+                content.innerHTML = 'gps:' + gps;
+                console.log('pointclick', ev);
+            });
+            myMap.on('lineclick', (ev) => {
+                const popup = document.querySelector('#popup');
+                const content = document.querySelector('.content');
+                myMap.renderPointModal(ev.middle, 'popup');
+                popup.style.display = 'block';
+                content.innerHTML = 'count:' + ev.feature.N.label;
+                console.log('lineclick', ev);
+
+            });
+            myMap.on('drawstart', (ev) => console.log('drawstart', ev));
+            myMap.on('drawend', (ev) => console.log('drawend', ev));
+            myMap.on('areacancel', (ev) => console.log('areacancel', ev));
+            myMap.on('areasearch', (ev) => console.log('areasearch', ev));
+            myMap.on('trailend', (ev) => console.log('trailfinish', ev));
+            myMap.on('modalclose', (ev) => console.log('modalclose', ev));
+            myMap.on('moveend', (ev) => console.log('moveend', ev));
+
+            window.changeSize = function () {
+                document.getElementById("map").style.height = "400px";
+                myMap.map.updateSize();
+            };
+        }
+    </script>
+<script type="text/javascript" src="olMap.js"></script></body>
+
+</html>

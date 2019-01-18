@@ -1,0 +1,32 @@
+{
+  "name": "ol-map",
+  "version": "1.0.0",
+  "description": "组件功能：\r ===\r * 渲染图层。包括：点图层（包括单点和聚合点），热力图层，几何区域图层等",
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "dev": "webpack-dev-server --mode development",
+    "build": "webpack --mode production"
+  },
+  "dependencies": {
+    "@turf/turf": "^5.1.6",
+    "date-fns": "^1.29.0",
+    "es6-promise": "^4.2.2",
+    "openlayers": "^4.6.4",
+    "webpack-cli": "^3.2.1"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.7.0",
+    "css-loader": "^0.28.9",
+    "file-loader": "^0.9.0",
+    "html-webpack-plugin": "^3.2.0",
+    "json-loader": "^0.5.4",
+    "style-loader": "^0.19.1",
+    "url-loader": "^0.5.7",
+    "webpack": "^4.28.4",
+    "webpack-dev-server": "^3.1.14"
+  }
+}
