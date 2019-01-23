@@ -11,27 +11,34 @@ import circlePng from '../assets/images/circle.png';
 /**
  * 公共方法
  */
-const utils = {
+ const utils = {
     isBigScreen: false,
-    styleFunction: (feature) => {
-        const count = feature.N.aggreCount,
+    styleFunction: (feature, isHover) => {
+        const name = feature.N.name;
+        switch(name) {
+            case 'point':
+            const count = feature.N.aggreCount,
             type = feature.N.type,
             type_ope = feature.N.type_ope;
-        if (count > 1) {
-            return utils.setJuheIconStyle(count);
-        } else {
-            return utils.setSingleIconStyle(type, type_ope);
+            if (count > 1) {
+                return utils.setJuheIconStyle(count, isHover);
+            } else {
+                return utils.setSingleIconStyle(type, type_ope, isHover);
+            }
+            break;
+            case 'line':
+            return utils.getLineStyle(feature.N.label, isHover);
         }
     },
     /**
      * 聚合点样式
      * len 聚合个数
-     * hover 点击或悬浮
+     * isHover 
      */
-    setJuheIconStyle: (len, hover) => {
+     setJuheIconStyle: (len, isHover) => {
         return new ol.style.Style({
             image: new ol.style.Icon(({
-                color: hover === 'hover' ? '#3da6f5' : '#F54336',
+                color: isHover ? '#3da6f5' : '#F54336',
                 src: juhePng,
                 anchor: [0.5, 1]
             })),
@@ -50,13 +57,13 @@ const utils = {
      * 单点样式
      * type: cr听音 sms短信 lu位置
      * opType: unOperate未操作 operated已操作 attention预警  today 24小时
-     * hover: 点击或悬浮
+     * isHover
      */
-    setSingleIconStyle: (type, opType, hover) => {
+     setSingleIconStyle: (type, opType, isHover) => {
         let src,
-            color = '#f00',
-            isAttention = opType === 'attention';
-        if (hover) {
+        color = '#f00',
+        isAttention = opType === 'attention';
+        if (isHover) {
             color = '#0096ff';
         } else if (opType === 'operated') {
             color = '#9fa2bd';
@@ -98,7 +105,7 @@ const utils = {
      * @param type
      * @param isHover
      */
-    getAreaStyle: (type, isHover) => {
+     getAreaStyle: (type, isHover) => {
         const isBigscreen = type && type.toLowerCase() === 'bigscreen';
         return new ol.style.Style({
             stroke: new ol.style.Stroke({
@@ -112,24 +119,70 @@ const utils = {
         })
     },
 
+     /**
+     * 线样式
+     * @param text
+     * @param isHover
+     */
+     getLineStyle: (text, isHover) => {
+        return new ol.style.Style({
+            text: new ol.style.Text({
+                text: text,
+                font: '16px arial,sans-serif',
+                padding: [10, 10, 10, 10],
+                    stroke: new ol.style.Stroke({   // 不加半透明stroke的话，点击文字背景不会选中
+                        color: 'rgba(255,255,255,.1)',
+                        width: 8
+                    }),
+                    fill: new ol.style.Fill({
+                        color: isHover ? '#0096ff' : '#000'
+                    }),
+                    placement: 'line',
+                    textBaseline: 'bottom',
+                    offsetY: -2
+                }),
+            stroke: new ol.style.Stroke({
+                color: isHover ? '#0096ff' : '#3db94c',
+                width: 1
+            })
+        });
+    },
+
+    /**
+     * arrow style
+     * @param text
+     * @param isHover
+     */
+     getArrowStyle: (isHover) => {
+        return new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: isHover ? '#0096ff' : '#3db94c',
+                width: 2
+            }),
+            fill: new ol.style.Fill({
+                color: isHover ? '#0096ff' : '#3db94c'
+            })
+        });
+    },
+
     /**
      * 获取当前地图视口左上角和右下角的坐标
      * @param map
      */
-    getViewGps: (map) => {
+     getViewGps: (map) => {
         let extent = map.getView().calculateExtent(map.getSize()),
             //上左的坐标
             getTopLeft = ol.proj.transform(ol.extent.getTopLeft(extent), 'EPSG:3857', 'EPSG:4326'),
             //下右的坐标
             getBottomRight = ol.proj.transform(ol.extent.getBottomRight(extent), 'EPSG:3857', 'EPSG:4326');
-        return [getTopLeft, getBottomRight];
-    },
+            return [getTopLeft, getBottomRight];
+        },
 
     /**
      * 格式化区域的data
      * @param data
      */
-    formatAreaData: (data) => {
+     formatAreaData: (data) => {
         return data.map(item => {
             if(item.areaType === '2' || item.areaType === 2) {
                 let center = item.center.split(',').map(str => parseFloat(str));
@@ -152,7 +205,7 @@ const utils = {
      * @param data  坐标集合  number[]
      * @returns {Array}
      */
-    getCoordinates: (data) => {
+     getCoordinates: (data) => {
         let coordinates = [];
         let len = data.length;
         // 矩形区域有时在项目中保存的只有左上角和右下角的坐标，兼容性考虑
@@ -178,7 +231,7 @@ const utils = {
      * coordinate转换为经纬度，经度可以大于180或小于-180 （toLonLat 会把不合法的经纬度换成合法的，画区超过地图边界时需要不合法坐标）
      * @param coordinate
      */
-    toGps: (coordinate) => {
+     toGps: (coordinate) => {
         let gps = ol.proj.toLonLat(coordinate);
         if (coordinate[0] > 20037508.342789244) {
             gps[0] = gps[0] + 360;
@@ -194,7 +247,7 @@ const utils = {
      * @param type 'coordinate' 或 不填
      * @returns {ol.Coordinate}
      */
-    getCenter: (map, type) => {
+     getCenter: (map, type) => {
         const center = map.getView().getCenter();
         if (type === 'coordinate') {
             return center;
@@ -208,7 +261,7 @@ const utils = {
      * @param map
      * @param gps
      */
-    setCenter: (map, gps) => {
+     setCenter: (map, gps) => {
         const center = ol.proj.fromLonLat([parseFloat(gps[0]), parseFloat(gps[1])]);
         map.getView().setCenter(center);
     },
@@ -220,7 +273,7 @@ const utils = {
      * @param arrowHeight 箭头的高度
      * @returns {ol.geom.Polygon}
      */
-    getArrow: (rPoint, endPoint, arrowHeight) => {
+     getArrow: (rPoint, endPoint, arrowHeight) => {
         //箭头底和高的交点位置
         const mPoint = [];
         //头与交点的位移差
@@ -242,7 +295,7 @@ const utils = {
         const halfBottomLen = arrowHeight / 3;
         // 箭头的另外两个顶点
         const point1 = [],
-            point2 = [];
+        point2 = [];
         const _x = halfBottomLen * Math.abs(diffY / arrowHeight);
         const _y = halfBottomLen * Math.abs(diffX / arrowHeight);
         if (diffY === 0) {
@@ -272,7 +325,7 @@ const utils = {
         }
         return new ol.geom.Polygon([
             [endPoint, point1, point2, endPoint]
-        ]);
+            ]);
     }
 };
 export default utils;

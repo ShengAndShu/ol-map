@@ -55,8 +55,8 @@
         window.onload = function () {
             const dataType = ['cr', 'sms', 'lu'];
             const type = ['unOperate', 'operated'];
-            // 数据模拟
-            function getData(isAgg, num) {
+            // 点数据模拟
+            function getPointData(isAgg, num) {
                 const data = [];
                 for (let i = 0; i < num; i++) {
                     data[i] = {
@@ -71,8 +71,8 @@
                 return data;
             }
 
-            window.aggreData = getData(true, 100);    // 带有聚合点的数据
-            window.data = getData(false, 100);        // 无聚合点数据（轨迹播放用）
+            window.aggreData = getPointData(true, 100);    // 带有聚合点的数据
+            window.data = getPointData(false, 100);        // 无聚合点数据（轨迹播放用）
 
             // 组件的使用方法与echarts相近
             window.myMap = olMap.init('map');
@@ -89,7 +89,7 @@
                     showTooltip: true,
                     showCancelBtn: true,
                     showSearchBtn: true,
-                    areaData: [{
+                    data: [{
                         areaType: 2,
                         areaName: '圆形',
                         areaDetail: '圆形区域详情',
@@ -107,8 +107,9 @@
                 },
                 effectLine: {
                     data: [
-                        {label: '1', coords: [[20, 20], [60, 30]]},
-                        {label: '2222', coords: [[30, 40], [60, 30]]}
+                        {label: 1, coords: [[20, 20], [80, 30]]},
+                        {label: '2222', coords: [[30, 40], [80, 30]]},
+                        {label: '2222', coords: [[-175, 40], [175, 30]]}
                     ]
                 }
             };

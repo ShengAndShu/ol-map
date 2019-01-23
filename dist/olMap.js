@@ -63,7 +63,7 @@
 /******/
 /******/ 	var hotApplyOnUpdate = true;
 /******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	var hotCurrentHash = "300a46322417941c38cf";
+/******/ 	var hotCurrentHash = "2a8d5eae780c4cc2765f";
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule;
@@ -2693,27 +2693,34 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
 /**
  * 公共方法
  */
-const utils = {
+ const utils = {
     isBigScreen: false,
-    styleFunction: (feature) => {
-        const count = feature.N.aggreCount,
+    styleFunction: (feature, isHover) => {
+        const name = feature.N.name;
+        switch(name) {
+            case 'point':
+            const count = feature.N.aggreCount,
             type = feature.N.type,
             type_ope = feature.N.type_ope;
-        if (count > 1) {
-            return utils.setJuheIconStyle(count);
-        } else {
-            return utils.setSingleIconStyle(type, type_ope);
+            if (count > 1) {
+                return utils.setJuheIconStyle(count, isHover);
+            } else {
+                return utils.setSingleIconStyle(type, type_ope, isHover);
+            }
+            break;
+            case 'line':
+            return utils.getLineStyle(feature.N.label, isHover);
         }
     },
     /**
      * 聚合点样式
      * len 聚合个数
-     * hover 点击或悬浮
+     * isHover 
      */
-    setJuheIconStyle: (len, hover) => {
+     setJuheIconStyle: (len, isHover) => {
         return new ol_default.a.style.Style({
             image: new ol_default.a.style.Icon(({
-                color: hover === 'hover' ? '#3da6f5' : '#F54336',
+                color: isHover ? '#3da6f5' : '#F54336',
                 src: juhe_default.a,
                 anchor: [0.5, 1]
             })),
@@ -2732,13 +2739,13 @@ const utils = {
      * 单点样式
      * type: cr听音 sms短信 lu位置
      * opType: unOperate未操作 operated已操作 attention预警  today 24小时
-     * hover: 点击或悬浮
+     * isHover
      */
-    setSingleIconStyle: (type, opType, hover) => {
+     setSingleIconStyle: (type, opType, isHover) => {
         let src,
-            color = '#f00',
-            isAttention = opType === 'attention';
-        if (hover) {
+        color = '#f00',
+        isAttention = opType === 'attention';
+        if (isHover) {
             color = '#0096ff';
         } else if (opType === 'operated') {
             color = '#9fa2bd';
@@ -2780,7 +2787,7 @@ const utils = {
      * @param type
      * @param isHover
      */
-    getAreaStyle: (type, isHover) => {
+     getAreaStyle: (type, isHover) => {
         const isBigscreen = type && type.toLowerCase() === 'bigscreen';
         return new ol_default.a.style.Style({
             stroke: new ol_default.a.style.Stroke({
@@ -2794,24 +2801,70 @@ const utils = {
         })
     },
 
+     /**
+     * 线样式
+     * @param text
+     * @param isHover
+     */
+     getLineStyle: (text, isHover) => {
+        return new ol_default.a.style.Style({
+            text: new ol_default.a.style.Text({
+                text: text,
+                font: '16px arial,sans-serif',
+                padding: [10, 10, 10, 10],
+                    stroke: new ol_default.a.style.Stroke({   // 不加半透明stroke的话，点击文字背景不会选中
+                        color: 'rgba(255,255,255,.1)',
+                        width: 8
+                    }),
+                    fill: new ol_default.a.style.Fill({
+                        color: isHover ? '#0096ff' : '#000'
+                    }),
+                    placement: 'line',
+                    textBaseline: 'bottom',
+                    offsetY: -2
+                }),
+            stroke: new ol_default.a.style.Stroke({
+                color: isHover ? '#0096ff' : '#3db94c',
+                width: 1
+            })
+        });
+    },
+
+    /**
+     * arrow style
+     * @param text
+     * @param isHover
+     */
+     getArrowStyle: (isHover) => {
+        return new ol_default.a.style.Style({
+            stroke: new ol_default.a.style.Stroke({
+                color: isHover ? '#0096ff' : '#3db94c',
+                width: 2
+            }),
+            fill: new ol_default.a.style.Fill({
+                color: isHover ? '#0096ff' : '#3db94c'
+            })
+        });
+    },
+
     /**
      * 获取当前地图视口左上角和右下角的坐标
      * @param map
      */
-    getViewGps: (map) => {
+     getViewGps: (map) => {
         let extent = map.getView().calculateExtent(map.getSize()),
             //上左的坐标
             getTopLeft = ol_default.a.proj.transform(ol_default.a.extent.getTopLeft(extent), 'EPSG:3857', 'EPSG:4326'),
             //下右的坐标
             getBottomRight = ol_default.a.proj.transform(ol_default.a.extent.getBottomRight(extent), 'EPSG:3857', 'EPSG:4326');
-        return [getTopLeft, getBottomRight];
-    },
+            return [getTopLeft, getBottomRight];
+        },
 
     /**
      * 格式化区域的data
      * @param data
      */
-    formatAreaData: (data) => {
+     formatAreaData: (data) => {
         return data.map(item => {
             if(item.areaType === '2' || item.areaType === 2) {
                 let center = item.center.split(',').map(str => parseFloat(str));
@@ -2834,7 +2887,7 @@ const utils = {
      * @param data  坐标集合  number[]
      * @returns {Array}
      */
-    getCoordinates: (data) => {
+     getCoordinates: (data) => {
         let coordinates = [];
         let len = data.length;
         // 矩形区域有时在项目中保存的只有左上角和右下角的坐标，兼容性考虑
@@ -2860,7 +2913,7 @@ const utils = {
      * coordinate转换为经纬度，经度可以大于180或小于-180 （toLonLat 会把不合法的经纬度换成合法的，画区超过地图边界时需要不合法坐标）
      * @param coordinate
      */
-    toGps: (coordinate) => {
+     toGps: (coordinate) => {
         let gps = ol_default.a.proj.toLonLat(coordinate);
         if (coordinate[0] > 20037508.342789244) {
             gps[0] = gps[0] + 360;
@@ -2876,7 +2929,7 @@ const utils = {
      * @param type 'coordinate' 或 不填
      * @returns {ol.Coordinate}
      */
-    getCenter: (map, type) => {
+     getCenter: (map, type) => {
         const center = map.getView().getCenter();
         if (type === 'coordinate') {
             return center;
@@ -2890,7 +2943,7 @@ const utils = {
      * @param map
      * @param gps
      */
-    setCenter: (map, gps) => {
+     setCenter: (map, gps) => {
         const center = ol_default.a.proj.fromLonLat([parseFloat(gps[0]), parseFloat(gps[1])]);
         map.getView().setCenter(center);
     },
@@ -2902,7 +2955,7 @@ const utils = {
      * @param arrowHeight 箭头的高度
      * @returns {ol.geom.Polygon}
      */
-    getArrow: (rPoint, endPoint, arrowHeight) => {
+     getArrow: (rPoint, endPoint, arrowHeight) => {
         //箭头底和高的交点位置
         const mPoint = [];
         //头与交点的位移差
@@ -2924,7 +2977,7 @@ const utils = {
         const halfBottomLen = arrowHeight / 3;
         // 箭头的另外两个顶点
         const point1 = [],
-            point2 = [];
+        point2 = [];
         const _x = halfBottomLen * Math.abs(diffY / arrowHeight);
         const _y = halfBottomLen * Math.abs(diffX / arrowHeight);
         if (diffY === 0) {
@@ -2954,7 +3007,7 @@ const utils = {
         }
         return new ol_default.a.geom.Polygon([
             [endPoint, point1, point2, endPoint]
-        ]);
+            ]);
     }
 };
 /* harmony default export */ var common_utils = (utils);
@@ -4031,6 +4084,1168 @@ const getPointModal = (domId, options) => {
     });
 };
 /* harmony default export */ var view_pointModal = (getPointModal);
+// CONCATENATED MODULE: ./node_modules/@turf/helpers/main.es.js
+/**
+ * Earth Radius used with the Harvesine formula and approximates using a spherical (non-ellipsoid) Earth.
+ */
+var earthRadius = 6371008.8;
+
+/**
+ * Unit of measurement factors using a spherical (non-ellipsoid) earth radius.
+ */
+var factors = {
+    meters: earthRadius,
+    metres: earthRadius,
+    millimeters: earthRadius * 1000,
+    millimetres: earthRadius * 1000,
+    centimeters: earthRadius * 100,
+    centimetres: earthRadius * 100,
+    kilometers: earthRadius / 1000,
+    kilometres: earthRadius / 1000,
+    miles: earthRadius / 1609.344,
+    nauticalmiles: earthRadius / 1852,
+    inches: earthRadius * 39.370,
+    yards: earthRadius / 1.0936,
+    feet: earthRadius * 3.28084,
+    radians: 1,
+    degrees: earthRadius / 111325,
+};
+
+/**
+ * Units of measurement factors based on 1 meter.
+ */
+var unitsFactors = {
+    meters: 1,
+    metres: 1,
+    millimeters: 1000,
+    millimetres: 1000,
+    centimeters: 100,
+    centimetres: 100,
+    kilometers: 1 / 1000,
+    kilometres: 1 / 1000,
+    miles: 1 / 1609.344,
+    nauticalmiles: 1 / 1852,
+    inches: 39.370,
+    yards: 1 / 1.0936,
+    feet: 3.28084,
+    radians: 1 / earthRadius,
+    degrees: 1 / 111325,
+};
+
+/**
+ * Area of measurement factors based on 1 square meter.
+ */
+var areaFactors = {
+    meters: 1,
+    metres: 1,
+    millimeters: 1000000,
+    millimetres: 1000000,
+    centimeters: 10000,
+    centimetres: 10000,
+    kilometers: 0.000001,
+    kilometres: 0.000001,
+    acres: 0.000247105,
+    miles: 3.86e-7,
+    yards: 1.195990046,
+    feet: 10.763910417,
+    inches: 1550.003100006
+};
+
+/**
+ * Wraps a GeoJSON {@link Geometry} in a GeoJSON {@link Feature}.
+ *
+ * @name feature
+ * @param {Geometry} geometry input geometry
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature} a GeoJSON Feature
+ * @example
+ * var geometry = {
+ *   "type": "Point",
+ *   "coordinates": [110, 50]
+ * };
+ *
+ * var feature = turf.feature(geometry);
+ *
+ * //=feature
+ */
+function main_es_feature(geometry, properties, options) {
+    // Optional Parameters
+    options = options || {};
+    if (!isObject(options)) throw new Error('options is invalid');
+    var bbox = options.bbox;
+    var id = options.id;
+
+    // Validation
+    if (geometry === undefined) throw new Error('geometry is required');
+    if (properties && properties.constructor !== Object) throw new Error('properties must be an Object');
+    if (bbox) validateBBox(bbox);
+    if (id) validateId(id);
+
+    // Main
+    var feat = {type: 'Feature'};
+    if (id) feat.id = id;
+    if (bbox) feat.bbox = bbox;
+    feat.properties = properties || {};
+    feat.geometry = geometry;
+    return feat;
+}
+
+/**
+ * Creates a GeoJSON {@link Geometry} from a Geometry string type & coordinates.
+ * For GeometryCollection type use `helpers.geometryCollection`
+ *
+ * @name geometry
+ * @param {string} type Geometry Type
+ * @param {Array<number>} coordinates Coordinates
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Geometry
+ * @returns {Geometry} a GeoJSON Geometry
+ * @example
+ * var type = 'Point';
+ * var coordinates = [110, 50];
+ *
+ * var geometry = turf.geometry(type, coordinates);
+ *
+ * //=geometry
+ */
+function main_es_geometry(type, coordinates, options) {
+    // Optional Parameters
+    options = options || {};
+    if (!isObject(options)) throw new Error('options is invalid');
+    var bbox = options.bbox;
+
+    // Validation
+    if (!type) throw new Error('type is required');
+    if (!coordinates) throw new Error('coordinates is required');
+    if (!Array.isArray(coordinates)) throw new Error('coordinates must be an Array');
+    if (bbox) validateBBox(bbox);
+
+    // Main
+    var geom;
+    switch (type) {
+    case 'Point': geom = main_es_point(coordinates).geometry; break;
+    case 'LineString': geom = lineString(coordinates).geometry; break;
+    case 'Polygon': geom = polygon(coordinates).geometry; break;
+    case 'MultiPoint': geom = multiPoint(coordinates).geometry; break;
+    case 'MultiLineString': geom = multiLineString(coordinates).geometry; break;
+    case 'MultiPolygon': geom = multiPolygon(coordinates).geometry; break;
+    default: throw new Error(type + ' is invalid');
+    }
+    if (bbox) geom.bbox = bbox;
+    return geom;
+}
+
+/**
+ * Creates a {@link Point} {@link Feature} from a Position.
+ *
+ * @name point
+ * @param {Array<number>} coordinates longitude, latitude position (each in decimal degrees)
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<Point>} a Point feature
+ * @example
+ * var point = turf.point([-75.343, 39.984]);
+ *
+ * //=point
+ */
+function main_es_point(coordinates, properties, options) {
+    if (!coordinates) throw new Error('coordinates is required');
+    if (!Array.isArray(coordinates)) throw new Error('coordinates must be an Array');
+    if (coordinates.length < 2) throw new Error('coordinates must be at least 2 numbers long');
+    if (!isNumber(coordinates[0]) || !isNumber(coordinates[1])) throw new Error('coordinates must contain numbers');
+
+    return main_es_feature({
+        type: 'Point',
+        coordinates: coordinates
+    }, properties, options);
+}
+
+/**
+ * Creates a {@link Point} {@link FeatureCollection} from an Array of Point coordinates.
+ *
+ * @name points
+ * @param {Array<Array<number>>} coordinates an array of Points
+ * @param {Object} [properties={}] Translate these properties to each Feature
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the FeatureCollection
+ * @param {string|number} [options.id] Identifier associated with the FeatureCollection
+ * @returns {FeatureCollection<Point>} Point Feature
+ * @example
+ * var points = turf.points([
+ *   [-75, 39],
+ *   [-80, 45],
+ *   [-78, 50]
+ * ]);
+ *
+ * //=points
+ */
+function points(coordinates, properties, options) {
+    if (!coordinates) throw new Error('coordinates is required');
+    if (!Array.isArray(coordinates)) throw new Error('coordinates must be an Array');
+
+    return featureCollection(coordinates.map(function (coords) {
+        return main_es_point(coords, properties);
+    }), options);
+}
+
+/**
+ * Creates a {@link Polygon} {@link Feature} from an Array of LinearRings.
+ *
+ * @name polygon
+ * @param {Array<Array<Array<number>>>} coordinates an array of LinearRings
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<Polygon>} Polygon Feature
+ * @example
+ * var polygon = turf.polygon([[[-5, 52], [-4, 56], [-2, 51], [-7, 54], [-5, 52]]], { name: 'poly1' });
+ *
+ * //=polygon
+ */
+function polygon(coordinates, properties, options) {
+    if (!coordinates) throw new Error('coordinates is required');
+
+    for (var i = 0; i < coordinates.length; i++) {
+        var ring = coordinates[i];
+        if (ring.length < 4) {
+            throw new Error('Each LinearRing of a Polygon must have 4 or more Positions.');
+        }
+        for (var j = 0; j < ring[ring.length - 1].length; j++) {
+            // Check if first point of Polygon contains two numbers
+            if (i === 0 && j === 0 && !isNumber(ring[0][0]) || !isNumber(ring[0][1])) throw new Error('coordinates must contain numbers');
+            if (ring[ring.length - 1][j] !== ring[0][j]) {
+                throw new Error('First and last Position are not equivalent.');
+            }
+        }
+    }
+
+    return main_es_feature({
+        type: 'Polygon',
+        coordinates: coordinates
+    }, properties, options);
+}
+
+/**
+ * Creates a {@link Polygon} {@link FeatureCollection} from an Array of Polygon coordinates.
+ *
+ * @name polygons
+ * @param {Array<Array<Array<Array<number>>>>} coordinates an array of Polygon coordinates
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the FeatureCollection
+ * @returns {FeatureCollection<Polygon>} Polygon FeatureCollection
+ * @example
+ * var polygons = turf.polygons([
+ *   [[[-5, 52], [-4, 56], [-2, 51], [-7, 54], [-5, 52]]],
+ *   [[[-15, 42], [-14, 46], [-12, 41], [-17, 44], [-15, 42]]],
+ * ]);
+ *
+ * //=polygons
+ */
+function polygons(coordinates, properties, options) {
+    if (!coordinates) throw new Error('coordinates is required');
+    if (!Array.isArray(coordinates)) throw new Error('coordinates must be an Array');
+
+    return featureCollection(coordinates.map(function (coords) {
+        return polygon(coords, properties);
+    }), options);
+}
+
+/**
+ * Creates a {@link LineString} {@link Feature} from an Array of Positions.
+ *
+ * @name lineString
+ * @param {Array<Array<number>>} coordinates an array of Positions
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<LineString>} LineString Feature
+ * @example
+ * var linestring1 = turf.lineString([[-24, 63], [-23, 60], [-25, 65], [-20, 69]], {name: 'line 1'});
+ * var linestring2 = turf.lineString([[-14, 43], [-13, 40], [-15, 45], [-10, 49]], {name: 'line 2'});
+ *
+ * //=linestring1
+ * //=linestring2
+ */
+function lineString(coordinates, properties, options) {
+    if (!coordinates) throw new Error('coordinates is required');
+    if (coordinates.length < 2) throw new Error('coordinates must be an array of two or more positions');
+    // Check if first point of LineString contains two numbers
+    if (!isNumber(coordinates[0][1]) || !isNumber(coordinates[0][1])) throw new Error('coordinates must contain numbers');
+
+    return main_es_feature({
+        type: 'LineString',
+        coordinates: coordinates
+    }, properties, options);
+}
+
+/**
+ * Creates a {@link LineString} {@link FeatureCollection} from an Array of LineString coordinates.
+ *
+ * @name lineStrings
+ * @param {Array<Array<number>>} coordinates an array of LinearRings
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the FeatureCollection
+ * @param {string|number} [options.id] Identifier associated with the FeatureCollection
+ * @returns {FeatureCollection<LineString>} LineString FeatureCollection
+ * @example
+ * var linestrings = turf.lineStrings([
+ *   [[-24, 63], [-23, 60], [-25, 65], [-20, 69]],
+ *   [[-14, 43], [-13, 40], [-15, 45], [-10, 49]]
+ * ]);
+ *
+ * //=linestrings
+ */
+function lineStrings(coordinates, properties, options) {
+    if (!coordinates) throw new Error('coordinates is required');
+    if (!Array.isArray(coordinates)) throw new Error('coordinates must be an Array');
+
+    return featureCollection(coordinates.map(function (coords) {
+        return lineString(coords, properties);
+    }), options);
+}
+
+/**
+ * Takes one or more {@link Feature|Features} and creates a {@link FeatureCollection}.
+ *
+ * @name featureCollection
+ * @param {Feature[]} features input features
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {FeatureCollection} FeatureCollection of Features
+ * @example
+ * var locationA = turf.point([-75.343, 39.984], {name: 'Location A'});
+ * var locationB = turf.point([-75.833, 39.284], {name: 'Location B'});
+ * var locationC = turf.point([-75.534, 39.123], {name: 'Location C'});
+ *
+ * var collection = turf.featureCollection([
+ *   locationA,
+ *   locationB,
+ *   locationC
+ * ]);
+ *
+ * //=collection
+ */
+function featureCollection(features, options) {
+    // Optional Parameters
+    options = options || {};
+    if (!isObject(options)) throw new Error('options is invalid');
+    var bbox = options.bbox;
+    var id = options.id;
+
+    // Validation
+    if (!features) throw new Error('No features passed');
+    if (!Array.isArray(features)) throw new Error('features must be an Array');
+    if (bbox) validateBBox(bbox);
+    if (id) validateId(id);
+
+    // Main
+    var fc = {type: 'FeatureCollection'};
+    if (id) fc.id = id;
+    if (bbox) fc.bbox = bbox;
+    fc.features = features;
+    return fc;
+}
+
+/**
+ * Creates a {@link Feature<MultiLineString>} based on a
+ * coordinate array. Properties can be added optionally.
+ *
+ * @name multiLineString
+ * @param {Array<Array<Array<number>>>} coordinates an array of LineStrings
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<MultiLineString>} a MultiLineString feature
+ * @throws {Error} if no coordinates are passed
+ * @example
+ * var multiLine = turf.multiLineString([[[0,0],[10,10]]]);
+ *
+ * //=multiLine
+ */
+function multiLineString(coordinates, properties, options) {
+    if (!coordinates) throw new Error('coordinates is required');
+
+    return main_es_feature({
+        type: 'MultiLineString',
+        coordinates: coordinates
+    }, properties, options);
+}
+
+/**
+ * Creates a {@link Feature<MultiPoint>} based on a
+ * coordinate array. Properties can be added optionally.
+ *
+ * @name multiPoint
+ * @param {Array<Array<number>>} coordinates an array of Positions
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<MultiPoint>} a MultiPoint feature
+ * @throws {Error} if no coordinates are passed
+ * @example
+ * var multiPt = turf.multiPoint([[0,0],[10,10]]);
+ *
+ * //=multiPt
+ */
+function multiPoint(coordinates, properties, options) {
+    if (!coordinates) throw new Error('coordinates is required');
+
+    return main_es_feature({
+        type: 'MultiPoint',
+        coordinates: coordinates
+    }, properties, options);
+}
+
+/**
+ * Creates a {@link Feature<MultiPolygon>} based on a
+ * coordinate array. Properties can be added optionally.
+ *
+ * @name multiPolygon
+ * @param {Array<Array<Array<Array<number>>>>} coordinates an array of Polygons
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<MultiPolygon>} a multipolygon feature
+ * @throws {Error} if no coordinates are passed
+ * @example
+ * var multiPoly = turf.multiPolygon([[[[0,0],[0,10],[10,10],[10,0],[0,0]]]]);
+ *
+ * //=multiPoly
+ *
+ */
+function multiPolygon(coordinates, properties, options) {
+    if (!coordinates) throw new Error('coordinates is required');
+
+    return main_es_feature({
+        type: 'MultiPolygon',
+        coordinates: coordinates
+    }, properties, options);
+}
+
+/**
+ * Creates a {@link Feature<GeometryCollection>} based on a
+ * coordinate array. Properties can be added optionally.
+ *
+ * @name geometryCollection
+ * @param {Array<Geometry>} geometries an array of GeoJSON Geometries
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<GeometryCollection>} a GeoJSON GeometryCollection Feature
+ * @example
+ * var pt = {
+ *     "type": "Point",
+ *       "coordinates": [100, 0]
+ *     };
+ * var line = {
+ *     "type": "LineString",
+ *     "coordinates": [ [101, 0], [102, 1] ]
+ *   };
+ * var collection = turf.geometryCollection([pt, line]);
+ *
+ * //=collection
+ */
+function geometryCollection(geometries, properties, options) {
+    if (!geometries) throw new Error('geometries is required');
+    if (!Array.isArray(geometries)) throw new Error('geometries must be an Array');
+
+    return main_es_feature({
+        type: 'GeometryCollection',
+        geometries: geometries
+    }, properties, options);
+}
+
+/**
+ * Round number to precision
+ *
+ * @param {number} num Number
+ * @param {number} [precision=0] Precision
+ * @returns {number} rounded number
+ * @example
+ * turf.round(120.4321)
+ * //=120
+ *
+ * turf.round(120.4321, 2)
+ * //=120.43
+ */
+function round(num, precision) {
+    if (num === undefined || num === null || isNaN(num)) throw new Error('num is required');
+    if (precision && !(precision >= 0)) throw new Error('precision must be a positive number');
+    var multiplier = Math.pow(10, precision || 0);
+    return Math.round(num * multiplier) / multiplier;
+}
+
+/**
+ * Convert a distance measurement (assuming a spherical Earth) from radians to a more friendly unit.
+ * Valid units: miles, nauticalmiles, inches, yards, meters, metres, kilometers, centimeters, feet
+ *
+ * @name radiansToLength
+ * @param {number} radians in radians across the sphere
+ * @param {string} [units='kilometers'] can be degrees, radians, miles, or kilometers inches, yards, metres, meters, kilometres, kilometers.
+ * @returns {number} distance
+ */
+function radiansToLength(radians, units) {
+    if (radians === undefined || radians === null) throw new Error('radians is required');
+
+    if (units && typeof units !== 'string') throw new Error('units must be a string');
+    var factor = factors[units || 'kilometers'];
+    if (!factor) throw new Error(units + ' units is invalid');
+    return radians * factor;
+}
+
+/**
+ * Convert a distance measurement (assuming a spherical Earth) from a real-world unit into radians
+ * Valid units: miles, nauticalmiles, inches, yards, meters, metres, kilometers, centimeters, feet
+ *
+ * @name lengthToRadians
+ * @param {number} distance in real units
+ * @param {string} [units='kilometers'] can be degrees, radians, miles, or kilometers inches, yards, metres, meters, kilometres, kilometers.
+ * @returns {number} radians
+ */
+function lengthToRadians(distance, units) {
+    if (distance === undefined || distance === null) throw new Error('distance is required');
+
+    if (units && typeof units !== 'string') throw new Error('units must be a string');
+    var factor = factors[units || 'kilometers'];
+    if (!factor) throw new Error(units + ' units is invalid');
+    return distance / factor;
+}
+
+/**
+ * Convert a distance measurement (assuming a spherical Earth) from a real-world unit into degrees
+ * Valid units: miles, nauticalmiles, inches, yards, meters, metres, centimeters, kilometres, feet
+ *
+ * @name lengthToDegrees
+ * @param {number} distance in real units
+ * @param {string} [units='kilometers'] can be degrees, radians, miles, or kilometers inches, yards, metres, meters, kilometres, kilometers.
+ * @returns {number} degrees
+ */
+function lengthToDegrees(distance, units) {
+    return radiansToDegrees(lengthToRadians(distance, units));
+}
+
+/**
+ * Converts any bearing angle from the north line direction (positive clockwise)
+ * and returns an angle between 0-360 degrees (positive clockwise), 0 being the north line
+ *
+ * @name bearingToAzimuth
+ * @param {number} bearing angle, between -180 and +180 degrees
+ * @returns {number} angle between 0 and 360 degrees
+ */
+function bearingToAzimuth(bearing) {
+    if (bearing === null || bearing === undefined) throw new Error('bearing is required');
+
+    var angle = bearing % 360;
+    if (angle < 0) angle += 360;
+    return angle;
+}
+
+/**
+ * Converts an angle in radians to degrees
+ *
+ * @name radiansToDegrees
+ * @param {number} radians angle in radians
+ * @returns {number} degrees between 0 and 360 degrees
+ */
+function radiansToDegrees(radians) {
+    if (radians === null || radians === undefined) throw new Error('radians is required');
+
+    var degrees = radians % (2 * Math.PI);
+    return degrees * 180 / Math.PI;
+}
+
+/**
+ * Converts an angle in degrees to radians
+ *
+ * @name degreesToRadians
+ * @param {number} degrees angle between 0 and 360 degrees
+ * @returns {number} angle in radians
+ */
+function degreesToRadians(degrees) {
+    if (degrees === null || degrees === undefined) throw new Error('degrees is required');
+
+    var radians = degrees % 360;
+    return radians * Math.PI / 180;
+}
+
+/**
+ * Converts a length to the requested unit.
+ * Valid units: miles, nauticalmiles, inches, yards, meters, metres, kilometers, centimeters, feet
+ *
+ * @param {number} length to be converted
+ * @param {string} originalUnit of the length
+ * @param {string} [finalUnit='kilometers'] returned unit
+ * @returns {number} the converted length
+ */
+function convertLength(length, originalUnit, finalUnit) {
+    if (length === null || length === undefined) throw new Error('length is required');
+    if (!(length >= 0)) throw new Error('length must be a positive number');
+
+    return radiansToLength(lengthToRadians(length, originalUnit), finalUnit || 'kilometers');
+}
+
+/**
+ * Converts a area to the requested unit.
+ * Valid units: kilometers, kilometres, meters, metres, centimetres, millimeters, acres, miles, yards, feet, inches
+ * @param {number} area to be converted
+ * @param {string} [originalUnit='meters'] of the distance
+ * @param {string} [finalUnit='kilometers'] returned unit
+ * @returns {number} the converted distance
+ */
+function convertArea(area, originalUnit, finalUnit) {
+    if (area === null || area === undefined) throw new Error('area is required');
+    if (!(area >= 0)) throw new Error('area must be a positive number');
+
+    var startFactor = areaFactors[originalUnit || 'meters'];
+    if (!startFactor) throw new Error('invalid original units');
+
+    var finalFactor = areaFactors[finalUnit || 'kilometers'];
+    if (!finalFactor) throw new Error('invalid final units');
+
+    return (area / startFactor) * finalFactor;
+}
+
+/**
+ * isNumber
+ *
+ * @param {*} num Number to validate
+ * @returns {boolean} true/false
+ * @example
+ * turf.isNumber(123)
+ * //=true
+ * turf.isNumber('foo')
+ * //=false
+ */
+function isNumber(num) {
+    return !isNaN(num) && num !== null && !Array.isArray(num);
+}
+
+/**
+ * isObject
+ *
+ * @param {*} input variable to validate
+ * @returns {boolean} true/false
+ * @example
+ * turf.isObject({elevation: 10})
+ * //=true
+ * turf.isObject('foo')
+ * //=false
+ */
+function isObject(input) {
+    return (!!input) && (input.constructor === Object);
+}
+
+/**
+ * Validate BBox
+ *
+ * @private
+ * @param {Array<number>} bbox BBox to validate
+ * @returns {void}
+ * @throws Error if BBox is not valid
+ * @example
+ * validateBBox([-180, -40, 110, 50])
+ * //=OK
+ * validateBBox([-180, -40])
+ * //=Error
+ * validateBBox('Foo')
+ * //=Error
+ * validateBBox(5)
+ * //=Error
+ * validateBBox(null)
+ * //=Error
+ * validateBBox(undefined)
+ * //=Error
+ */
+function validateBBox(bbox) {
+    if (!bbox) throw new Error('bbox is required');
+    if (!Array.isArray(bbox)) throw new Error('bbox must be an Array');
+    if (bbox.length !== 4 && bbox.length !== 6) throw new Error('bbox must be an Array of 4 or 6 numbers');
+    bbox.forEach(function (num) {
+        if (!isNumber(num)) throw new Error('bbox must only contain numbers');
+    });
+}
+
+/**
+ * Validate Id
+ *
+ * @private
+ * @param {string|number} id Id to validate
+ * @returns {void}
+ * @throws Error if Id is not valid
+ * @example
+ * validateId([-180, -40, 110, 50])
+ * //=Error
+ * validateId([-180, -40])
+ * //=Error
+ * validateId('Foo')
+ * //=OK
+ * validateId(5)
+ * //=OK
+ * validateId(null)
+ * //=Error
+ * validateId(undefined)
+ * //=Error
+ */
+function validateId(id) {
+    if (!id) throw new Error('id is required');
+    if (['string', 'number'].indexOf(typeof id) === -1) throw new Error('id must be a number or a string');
+}
+
+// Deprecated methods
+function radians2degrees() {
+    throw new Error('method has been renamed to `radiansToDegrees`');
+}
+
+function degrees2radians() {
+    throw new Error('method has been renamed to `degreesToRadians`');
+}
+
+function distanceToDegrees() {
+    throw new Error('method has been renamed to `lengthToDegrees`');
+}
+
+function distanceToRadians() {
+    throw new Error('method has been renamed to `lengthToRadians`');
+}
+
+function radiansToDistance() {
+    throw new Error('method has been renamed to `radiansToLength`');
+}
+
+function bearingToAngle() {
+    throw new Error('method has been renamed to `bearingToAzimuth`');
+}
+
+function convertDistance() {
+    throw new Error('method has been renamed to `convertLength`');
+}
+
+
+
+// CONCATENATED MODULE: ./node_modules/@turf/invariant/main.es.js
+
+
+/**
+ * Unwrap a coordinate from a Point Feature, Geometry or a single coordinate.
+ *
+ * @name getCoord
+ * @param {Array<number>|Geometry<Point>|Feature<Point>} obj Object
+ * @returns {Array<number>} coordinates
+ * @example
+ * var pt = turf.point([10, 10]);
+ *
+ * var coord = turf.getCoord(pt);
+ * //= [10, 10]
+ */
+function getCoord(obj) {
+    if (!obj) throw new Error('obj is required');
+
+    var coordinates = getCoords(obj);
+
+    // getCoord() must contain at least two numbers (Point)
+    if (coordinates.length > 1 && isNumber(coordinates[0]) && isNumber(coordinates[1])) {
+        return coordinates;
+    } else {
+        throw new Error('Coordinate is not a valid Point');
+    }
+}
+
+/**
+ * Unwrap coordinates from a Feature, Geometry Object or an Array of numbers
+ *
+ * @name getCoords
+ * @param {Array<number>|Geometry|Feature} obj Object
+ * @returns {Array<number>} coordinates
+ * @example
+ * var poly = turf.polygon([[[119.32, -8.7], [119.55, -8.69], [119.51, -8.54], [119.32, -8.7]]]);
+ *
+ * var coord = turf.getCoords(poly);
+ * //= [[[119.32, -8.7], [119.55, -8.69], [119.51, -8.54], [119.32, -8.7]]]
+ */
+function getCoords(obj) {
+    if (!obj) throw new Error('obj is required');
+    var coordinates;
+
+    // Array of numbers
+    if (obj.length) {
+        coordinates = obj;
+
+    // Geometry Object
+    } else if (obj.coordinates) {
+        coordinates = obj.coordinates;
+
+    // Feature
+    } else if (obj.geometry && obj.geometry.coordinates) {
+        coordinates = obj.geometry.coordinates;
+    }
+    // Checks if coordinates contains a number
+    if (coordinates) {
+        containsNumber(coordinates);
+        return coordinates;
+    }
+    throw new Error('No valid coordinates');
+}
+
+/**
+ * Checks if coordinates contains a number
+ *
+ * @name containsNumber
+ * @param {Array<any>} coordinates GeoJSON Coordinates
+ * @returns {boolean} true if Array contains a number
+ */
+function containsNumber(coordinates) {
+    if (coordinates.length > 1 && isNumber(coordinates[0]) && isNumber(coordinates[1])) {
+        return true;
+    }
+
+    if (Array.isArray(coordinates[0]) && coordinates[0].length) {
+        return containsNumber(coordinates[0]);
+    }
+    throw new Error('coordinates must only contain numbers');
+}
+
+/**
+ * Enforce expectations about types of GeoJSON objects for Turf.
+ *
+ * @name geojsonType
+ * @param {GeoJSON} value any GeoJSON object
+ * @param {string} type expected GeoJSON type
+ * @param {string} name name of calling function
+ * @throws {Error} if value is not the expected type.
+ */
+function geojsonType(value, type, name) {
+    if (!type || !name) throw new Error('type and name required');
+
+    if (!value || value.type !== type) {
+        throw new Error('Invalid input to ' + name + ': must be a ' + type + ', given ' + value.type);
+    }
+}
+
+/**
+ * Enforce expectations about types of {@link Feature} inputs for Turf.
+ * Internally this uses {@link geojsonType} to judge geometry types.
+ *
+ * @name featureOf
+ * @param {Feature} feature a feature with an expected geometry type
+ * @param {string} type expected GeoJSON type
+ * @param {string} name name of calling function
+ * @throws {Error} error if value is not the expected type.
+ */
+function featureOf(feature, type, name) {
+    if (!feature) throw new Error('No feature passed');
+    if (!name) throw new Error('.featureOf() requires a name');
+    if (!feature || feature.type !== 'Feature' || !feature.geometry) {
+        throw new Error('Invalid input to ' + name + ', Feature with geometry required');
+    }
+    if (!feature.geometry || feature.geometry.type !== type) {
+        throw new Error('Invalid input to ' + name + ': must be a ' + type + ', given ' + feature.geometry.type);
+    }
+}
+
+/**
+ * Enforce expectations about types of {@link FeatureCollection} inputs for Turf.
+ * Internally this uses {@link geojsonType} to judge geometry types.
+ *
+ * @name collectionOf
+ * @param {FeatureCollection} featureCollection a FeatureCollection for which features will be judged
+ * @param {string} type expected GeoJSON type
+ * @param {string} name name of calling function
+ * @throws {Error} if value is not the expected type.
+ */
+function collectionOf(featureCollection, type, name) {
+    if (!featureCollection) throw new Error('No featureCollection passed');
+    if (!name) throw new Error('.collectionOf() requires a name');
+    if (!featureCollection || featureCollection.type !== 'FeatureCollection') {
+        throw new Error('Invalid input to ' + name + ', FeatureCollection required');
+    }
+    for (var i = 0; i < featureCollection.features.length; i++) {
+        var feature = featureCollection.features[i];
+        if (!feature || feature.type !== 'Feature' || !feature.geometry) {
+            throw new Error('Invalid input to ' + name + ', Feature with geometry required');
+        }
+        if (!feature.geometry || feature.geometry.type !== type) {
+            throw new Error('Invalid input to ' + name + ': must be a ' + type + ', given ' + feature.geometry.type);
+        }
+    }
+}
+
+/**
+ * Get Geometry from Feature or Geometry Object
+ *
+ * @param {Feature|Geometry} geojson GeoJSON Feature or Geometry Object
+ * @returns {Geometry|null} GeoJSON Geometry Object
+ * @throws {Error} if geojson is not a Feature or Geometry Object
+ * @example
+ * var point = {
+ *   "type": "Feature",
+ *   "properties": {},
+ *   "geometry": {
+ *     "type": "Point",
+ *     "coordinates": [110, 40]
+ *   }
+ * }
+ * var geom = turf.getGeom(point)
+ * //={"type": "Point", "coordinates": [110, 40]}
+ */
+function getGeom(geojson) {
+    if (!geojson) throw new Error('geojson is required');
+    if (geojson.geometry !== undefined) return geojson.geometry;
+    if (geojson.coordinates || geojson.geometries) return geojson;
+    throw new Error('geojson must be a valid Feature or Geometry Object');
+}
+
+/**
+ * Get Geometry Type from Feature or Geometry Object
+ *
+ * @throws {Error} **DEPRECATED** in v5.0.0 in favor of getType
+ */
+function getGeomType() {
+    throw new Error('invariant.getGeomType has been deprecated in v5.0 in favor of invariant.getType');
+}
+
+/**
+ * Get GeoJSON object's type, Geometry type is prioritize.
+ *
+ * @param {GeoJSON} geojson GeoJSON object
+ * @param {string} [name] name of the variable to display in error message
+ * @returns {string} GeoJSON type
+ * @example
+ * var point = {
+ *   "type": "Feature",
+ *   "properties": {},
+ *   "geometry": {
+ *     "type": "Point",
+ *     "coordinates": [110, 40]
+ *   }
+ * }
+ * var geom = turf.getType(point)
+ * //="Point"
+ */
+function getType(geojson, name) {
+    if (!geojson) throw new Error((name || 'geojson') + ' is required');
+    // GeoJSON Feature & GeometryCollection
+    if (geojson.geometry && geojson.geometry.type) return geojson.geometry.type;
+    // GeoJSON Geometry & FeatureCollection
+    if (geojson.type) return geojson.type;
+    throw new Error((name || 'geojson') + ' is invalid');
+}
+
+
+
+// CONCATENATED MODULE: ./node_modules/@turf/bezier-spline/main.es.js
+
+
+
+/* eslint-disable */
+
+ /**
+   * BezierSpline
+   * https://github.com/leszekr/bezier-spline-js
+   *
+   * @private
+   * @copyright
+   * Copyright (c) 2013 Leszek Rybicki
+   *
+   * Permission is hereby granted, free of charge, to any person obtaining a copy
+   * of this software and associated documentation files (the "Software"), to deal
+   * in the Software without restriction, including without limitation the rights
+   * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   * copies of the Software, and to permit persons to whom the Software is
+   * furnished to do so, subject to the following conditions:
+   *
+   * The above copyright notice and this permission notice shall be included in all
+   * copies or substantial portions of the Software.
+   *
+   * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   * SOFTWARE.
+   */
+var Spline = function (options) {
+    this.points = options.points || [];
+    this.duration = options.duration || 10000;
+    this.sharpness = options.sharpness || 0.85;
+    this.centers = [];
+    this.controls = [];
+    this.stepLength = options.stepLength || 60;
+    this.length = this.points.length;
+    this.delay = 0;
+    // this is to ensure compatibility with the 2d version
+    for (var i = 0; i < this.length; i++) this.points[i].z = this.points[i].z || 0;
+    for (var i = 0; i < this.length - 1; i++) {
+        var p1 = this.points[i];
+        var p2 = this.points[i + 1];
+        this.centers.push({
+            x: (p1.x + p2.x) / 2,
+            y: (p1.y + p2.y) / 2,
+            z: (p1.z + p2.z) / 2
+        });
+    }
+    this.controls.push([this.points[0], this.points[0]]);
+    for (var i = 0; i < this.centers.length - 1; i++) {
+        var p1 = this.centers[i];
+        var p2 = this.centers[i + 1];
+        var dx = this.points[i + 1].x - (this.centers[i].x + this.centers[i + 1].x) / 2;
+        var dy = this.points[i + 1].y - (this.centers[i].y + this.centers[i + 1].y) / 2;
+        var dz = this.points[i + 1].z - (this.centers[i].y + this.centers[i + 1].z) / 2;
+        this.controls.push([{
+            x: (1.0 - this.sharpness) * this.points[i + 1].x + this.sharpness * (this.centers[i].x + dx),
+            y: (1.0 - this.sharpness) * this.points[i + 1].y + this.sharpness * (this.centers[i].y + dy),
+            z: (1.0 - this.sharpness) * this.points[i + 1].z + this.sharpness * (this.centers[i].z + dz)},
+            {
+                x: (1.0 - this.sharpness) * this.points[i + 1].x + this.sharpness * (this.centers[i + 1].x + dx),
+                y: (1.0 - this.sharpness) * this.points[i + 1].y + this.sharpness * (this.centers[i + 1].y + dy),
+                z: (1.0 - this.sharpness) * this.points[i + 1].z + this.sharpness * (this.centers[i + 1].z + dz)}]);
+    }
+    this.controls.push([this.points[this.length - 1], this.points[this.length - 1]]);
+    this.steps = this.cacheSteps(this.stepLength);
+    return this;
+};
+
+  /*
+    Caches an array of equidistant (more or less) points on the curve.
+  */
+Spline.prototype.cacheSteps = function (mindist) {
+    var steps = [];
+    var laststep = this.pos(0);
+    steps.push(0);
+    for (var t = 0; t < this.duration; t += 10) {
+        var step = this.pos(t);
+        var dist = Math.sqrt((step.x - laststep.x) * (step.x - laststep.x) + (step.y - laststep.y) * (step.y - laststep.y) + (step.z - laststep.z) * (step.z - laststep.z));
+        if (dist > mindist) {
+            steps.push(t);
+            laststep = step;
+        }
+    }
+    return steps;
+};
+
+  /*
+    returns angle and speed in the given point in the curve
+  */
+Spline.prototype.vector = function (t) {
+    var p1 = this.pos(t + 10);
+    var p2 = this.pos(t - 10);
+    return {
+        angle:180 * Math.atan2(p1.y - p2.y, p1.x - p2.x) / 3.14,
+        speed:Math.sqrt((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y) + (p2.z - p1.z) * (p2.z - p1.z))
+    };
+};
+
+  /*
+    Gets the position of the point, given time.
+
+    WARNING: The speed is not constant. The time it takes between control points is constant.
+
+    For constant speed, use Spline.steps[i];
+  */
+Spline.prototype.pos = function (time) {
+
+    function bezier(t, p1, c1, c2, p2) {
+        var B = function (t) {
+            var t2 = t * t, t3 = t2 * t;
+            return [(t3), (3 * t2 * (1 - t)), (3 * t * (1 - t) * (1 - t)), ((1 - t) * (1 - t) * (1 - t))];
+        };
+        var b = B(t);
+        var pos = {
+            x : p2.x * b[0] + c2.x * b[1] + c1.x * b[2] + p1.x * b[3],
+            y : p2.y * b[0] + c2.y * b[1] + c1.y * b[2] + p1.y * b[3],
+            z : p2.z * b[0] + c2.z * b[1] + c1.z * b[2] + p1.z * b[3]
+        };
+        return pos;
+    }
+    var t = time - this.delay;
+    if (t < 0) t = 0;
+    if (t > this.duration) t = this.duration - 1;
+    //t = t-this.delay;
+    var t2 = (t) / this.duration;
+    if (t2 >= 1) return this.points[this.length - 1];
+
+    var n = Math.floor((this.points.length - 1) * t2);
+    var t1 = (this.length - 1) * t2 - n;
+    return bezier(t1, this.points[n], this.controls[n][1], this.controls[n + 1][0], this.points[n + 1]);
+};
+
+/**
+ * Takes a {@link LineString|line} and returns a curved version
+ * by applying a [Bezier spline](http://en.wikipedia.org/wiki/B%C3%A9zier_spline)
+ * algorithm.
+ *
+ * The bezier spline implementation is by [Leszek Rybicki](http://leszek.rybicki.cc/).
+ *
+ * @name bezierSpline
+ * @param {Feature<LineString>} line input LineString
+ * @param {Object} [options={}] Optional parameters
+ * @param {number} [options.resolution=10000] time in milliseconds between points
+ * @param {number} [options.sharpness=0.85] a measure of how curvy the path should be between splines
+ * @returns {Feature<LineString>} curved line
+ * @example
+ * var line = turf.lineString([
+ *   [-76.091308, 18.427501],
+ *   [-76.695556, 18.729501],
+ *   [-76.552734, 19.40443],
+ *   [-74.61914, 19.134789],
+ *   [-73.652343, 20.07657],
+ *   [-73.157958, 20.210656]
+ * ]);
+ *
+ * var curved = turf.bezierSpline(line);
+ *
+ * //addToMap
+ * var addToMap = [line, curved]
+ * curved.properties = { stroke: '#0F0' };
+ */
+function bezier(line, options) {
+    // Optional params
+    options = options || {};
+    if (!isObject(options)) throw new Error('options is invalid');
+    var resolution = options.resolution || 10000;
+    var sharpness = options.sharpness || 0.85;
+
+    // validation
+    if (!line) throw new Error('line is required');
+    if (!isNumber(resolution)) throw new Error('resolution must be an number');
+    if (!isNumber(sharpness)) throw new Error('sharpness must be an number');
+
+    var coords = [];
+    var spline = new Spline({
+        points: getGeom(line).coordinates.map(function (pt) {
+            return {x: pt[0], y: pt[1]};
+        }),
+        duration: resolution,
+        sharpness: sharpness
+    });
+
+    for (var i = 0; i < spline.duration; i += 10) {
+        var pos = spline.pos(i);
+        if (Math.floor(i / 100) % 2 === 0) {
+            coords.push([pos.x, pos.y]);
+        }
+    }
+
+    return lineString(coords, line.properties);
+}
+
+/* harmony default export */ var main_es = (bezier);
+
 // CONCATENATED MODULE: ./src/action/effectLine.js
 
 
@@ -4040,25 +5255,17 @@ class effectLine_EffectLine {
     constructor(map, option) {
         this.map = map;
         this.data = option.data;
-        this.lineLength = 150;          // 线被分成多少个点
-        this.curIndex = 0;              // 箭头当前的位置
-        this.lines = [];                // lines geometry 集合
+        this.duration = 3000;           // 动画时间
+        this.curveness = 0.1;           // 贝塞尔曲线的弯曲程度，0~1，值越大越弯曲
+        this.startTime = 0;             // 动画开始的时间
         this.features = [];             // features集合
         this.layer = null;              // 线的图层
         this.animateFun = (ev) => this.animate(ev);    // 渲染的回调（用箭头函数确保animate中的this指向）
-        this.arrowStyle = new ol_default.a.style.Style({
-            stroke: new ol_default.a.style.Stroke({
-                color: '#0000FF',
-                width: 2
-            }),
-            fill: new ol_default.a.style.Fill({
-                color: '#0000FF'
-            })
-        });
     }
 
     start() {
         this.getLinesAndLayer();
+        this.startTime = new Date().getTime();
         this.map.on('postcompose', this.animateFun);
         this.map.render();
     }
@@ -4071,46 +5278,19 @@ class effectLine_EffectLine {
     // 获取line features 和 layer
     getLinesAndLayer() {
         const data = this.data;
-        const lineLength = this.lineLength;
         for (let i = 0, l = data.length; i < l; i++) {
             const item = data[i];
-            const coords = item.coords.map(coord => ({x: coord[0], y: coord[1]}));
-            const arcGenerator = new action_arc.GreatCircle(coords[0], coords[1]);
-            const arcLine = arcGenerator.Arc(lineLength, {offset: 20});
-            if (arcLine.geometries[0].coords.length > 150) {
-                debugger;
-            }
-            const line = new ol_default.a.geom.LineString(arcLine.geometries[0].coords);
-            line.transform(ol_default.a.proj.get('EPSG:4326'), ol_default.a.proj.get('EPSG:3857'));
-            this.lines.push(line);
+            const coords = item.coords;
+            const line = this.getBezierLine(ol_default.a.proj.fromLonLat(coords[0]), ol_default.a.proj.fromLonLat(coords[1]));
 
-            const label = item.label;
+            const label = String(item.label);
             const feature = new ol_default.a.Feature({
                 name: 'line',
                 label: label,
-                geometry: line
+                geometry: line,
+                originData: item
             });
-            const lineStyle = new ol_default.a.style.Style({
-                text: new ol_default.a.style.Text({
-                    text: label,
-                    font: '16px arial,sans-serif',
-                    padding: [10, 10, 10, 10],
-                    stroke: new ol_default.a.style.Stroke({   // 不加透明的stroke的话，点击背景不会选中
-                        color: 'rgba(255,255,255,.1)',
-                        width: 8
-                    }),
-                    fill: new ol_default.a.style.Fill({
-                        color: '#000'
-                    }),
-                    placement: 'line',
-                    textBaseline: 'bottom',
-                    offsetY: -2
-                }),
-                stroke: new ol_default.a.style.Stroke({
-                    color: '#0000FF',
-                    width: 2
-                })
-            });
+            const lineStyle = common_utils.getLineStyle(label);
             feature.setStyle(lineStyle);
             this.features.push(feature);
         }
@@ -4127,47 +5307,66 @@ class effectLine_EffectLine {
     // 开始动画（箭头和闪光点）
     animate(event) {
         const vectorContext = event.vectorContext;
+        const elapsed = event.frameState.time - this.startTime;
+        const elapsedRatio = elapsed % this.duration / this.duration;
 
         // 开始画箭头
-        vectorContext.setStyle(this.arrowStyle);
         const zoom = this.map.getView().getZoom();
         const unitDistance = 10000 * Math.pow(2, 5 - zoom);
         const arrowHeight = 5 * unitDistance;
-        const curIndex = this.curIndex;
-        const lines = this.lines;
-        for (let i = 0, l = lines.length; i < l; i++) {
-            const line = lines[i];
-            const coords = line.getCoordinates();
-            const start = coords[curIndex];
-            const end = coords[curIndex + 1];
+        const features = this.features;
+        for (let i = 0, l = features.length; i < l; i++) {
+            const feature = features[i];
+            const isActive = feature.get('isActive');
+            const coords = feature.getGeometry().getCoordinates();
+            const index = Math.floor((coords.length - 2) * elapsedRatio);
+            const start = coords[index];
+            const end = coords[index + 1];
             const arrow = common_utils.getArrow(start, end, arrowHeight);
+            vectorContext.setStyle(common_utils.getArrowStyle(isActive));
             vectorContext.drawGeometry(arrow);
         }
-        (this.curIndex < this.lineLength - 2) ? this.curIndex++ : this.curIndex = 0;
 
         // 开始画闪光点
-        const ratio = this.curIndex / this.lineLength;
-        const radius = ol_default.a.easing.easeOut(ratio) * 25 + 3;
-        const opacity = ol_default.a.easing.easeOut(1 - ratio);
-        const cirCleStyle = new ol_default.a.style.Style({
-            image: new ol_default.a.style.Circle({
-                radius: radius,
-                snapToPixel: false,
-                stroke: new ol_default.a.style.Stroke({
-                    color: 'rgba(255,0,0,' + opacity + ')',
-                    width: 0.25 + opacity
-                })
-            })
-        });
-        vectorContext.setStyle(cirCleStyle);
-        for (let i = 0, l = lines.length; i < l; i++) {
-            const coords = lines[i].getCoordinates();
-            const point = new ol_default.a.geom.Point(coords[coords.length - 1]);
-            vectorContext.drawGeometry(point);
-        }
+        // const radius = ol.easing.easeOut(elapsedRatio) * 25 + 3;
+        // const opacity = ol.easing.easeOut(1 - elapsedRatio);
+        // const cirCleStyle = new ol.style.Style({
+        //     image: new ol.style.Circle({
+        //         radius: radius,
+        //         snapToPixel: false,
+        //         stroke: new ol.style.Stroke({
+        //             color: 'rgba(255,0,0,' + opacity + ')',
+        //             width: 0.25 + opacity
+        //         })
+        //     })
+        // });
+        // vectorContext.setStyle(cirCleStyle);
+        // for (let i = 0, l = features.length; i < l; i++) {
+        //     const coords = feature.getGeometry().getCoordinates();
+        //     const point = new ol.geom.Point(coords[coords.length - 1]);
+        //     vectorContext.drawGeometry(point);
+        // }
 
         // 触发地图重新渲染
         this.map.render();
+    }
+
+    // 根据起点和终点获取贝塞尔曲线
+    getBezierLine(p1, p2) {
+        const middle = [
+            (p1[0] + p2[0]) / 2 - (p1[1] - p2[1]) * this.curveness,
+            (p1[1] + p2[1]) / 2 - (p2[0] - p1[0]) * this.curveness
+        ];
+        const geoJson = {
+            "type": "Feature",
+            "properties": {},
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [p1, middle, p2]
+            }
+        };
+        const curved = main_es(geoJson);
+        return new ol_default.a.geom.LineString(curved["geometry"]["coordinates"]);
     }
 }
 
@@ -4179,34 +5378,47 @@ class effectLine_EffectLine {
 /**
  * 地图事件
  */
-class events_Events {
+ class events_Events {
     constructor(map, options, eventsHandler) {
         this.map = map;
         this.options = options;
         this.eventsHandler = eventsHandler;
-        this.lastClick = null;   // 上一次点击的点
+        this.lastClick = null;   // 上一次点击的点或线
         this.lastZoom = null;    // 缩放前的层级
-        this.hoverPoints = [];   // 悬浮选中的点(用数组来解决feature重叠的问题，重叠feature之间移动鼠标不会触发移出事件)
+        this.lastHover = null;   // 上一次hover的点或线
         this.areaOverlay = null; // ol select 事件
     }
 
     /**
      * 点击地图
      */
-    clickEvent(ev) {
+     clickEvent(ev) {
         this.areaBtnClick(ev);
         const feature = ev.map.forEachFeatureAtPixel(ev.pixel, point => point);
         if (!feature) {
             return;
         }
-        const name = feature.N.name;
+        const name = feature.get('name');
+        // reset lastClick
+        const lastP = this.lastClick;
+        if (lastP && lastP !== feature) {
+            if (name === 'point') {
+                const opType = lastP.get('type_ope');
+                const newOpType = (opType === 'attention' || opType === 'today') ? opType : 'operated';
+                lastP.set('type_ope', newOpType);
+            }
+            lastP.set('isActive', false);
+            lastP.setStyle(common_utils.styleFunction(lastP));
+        }
+
+        feature.set('isActive', true);
         switch (name) {
-        case 'point':
+            case 'point':
             this.pointClick(feature);
             break;
-        case 'area':
+            case 'area':
             break;
-        case 'line':
+            case 'line':
             this.lineClick(feature);
             break;
         }
@@ -4215,24 +5427,17 @@ class events_Events {
     /**
      * 点击地图数据点事件
      */
-    pointClick(feature) {
+     pointClick(feature) {
         // 如果点击的是上一次点击的同一个点，则不进行操作
-        if (this.lastClick && feature.N.aggreGPS === this.lastClick.N.aggreGPS) {
+        if (this.lastClick && feature === this.lastClick) {
             return;
         }
-        const num = feature.N.aggreCount || 1,
-            type = feature.N.type,
-            type_ope = feature.N.type_ope;
+        const num = feature.get('aggreCount') || 1,
+        type = feature.get('type'),
+        type_ope = feature.get('type_ope');
         const style = num === 1 ? common_utils.setSingleIconStyle(type, type_ope, 'hover') : common_utils.setJuheIconStyle(num, 'hover');
         feature.setStyle(style);
 
-        if (this.lastClick) {
-            const lastClick = this.lastClick,
-                count = lastClick.N.aggreCount || 1,
-                type_ope = lastClick.N.type_ope;
-            lastClick.N.type_ope = (type_ope === 'attention' || type_ope === 'today') ? type_ope : 'operated';
-            lastClick.setStyle(count === 1 ? common_utils.setSingleIconStyle(lastClick.N.type, lastClick.N.type_ope) : common_utils.setJuheIconStyle(count));
-        }
         this.lastClick = feature;
         this.eventsHandler.onpointclick(feature);
     }
@@ -4240,7 +5445,7 @@ class events_Events {
     /**
      * area 点击选区按钮事件
      */
-    areaBtnClick(ev) {
+     areaBtnClick(ev) {
         let target = ev.originalEvent.target;
         let classList = target.classList;
         if (classList.contains('overlay-btn')) {
@@ -4248,7 +5453,7 @@ class events_Events {
             let layers = this.map.getLayers().a;
             let currentLayer = {};
             layers.some(layer => {
-                if (layer.N.id === id) {
+                if (layer.get('id') === id) {
                     currentLayer = layer;
                     return true;
                 }
@@ -4267,22 +5472,24 @@ class events_Events {
     /**
      * 点击线事件
      */
-    lineClick(feature) {
+     lineClick(feature) {
         const coords = feature.getGeometry().getCoordinates();
         const l = coords.length;
+        const start = ol_default.a.proj.toLonLat(coords[0]);
+        const middle = ol_default.a.proj.toLonLat(coords[Math.floor(l / 2)]);
+        const end = ol_default.a.proj.toLonLat(coords[l - 1]);
         const data = {
-            start: ol_default.a.proj.toLonLat(coords[0]),
-            middle: ol_default.a.proj.toLonLat(coords[Math.floor(l / 2)]),
-            end: ol_default.a.proj.toLonLat(coords[l - 1]),
+            coords: [start, middle, end],
             feature: feature
         }
+        this.lastClick = feature;
         this.eventsHandler.onlineclick(data);
     }
 
     /**
      * 移动鼠标时，选区的tooltip也跟随移动
      */
-    moveEvent(ev) {
+     moveEvent(ev) {
         if (this.areaOverlay) {
             this.areaOverlay.setPosition(ev.coordinate);
         }
@@ -4292,21 +5499,21 @@ class events_Events {
      * 关闭点弹框
      * @param pointModal 弹框对象
      */
-    closePointModal(pointModal) {
+     closePointModal(pointModal) {
         if (!pointModal) return;
         pointModal.setPosition(undefined);
-        if (!this.lastClick) return;
 
-        const num = this.lastClick.N.aggreCount || 1,
-            type = this.lastClick.N.type,
-            type_ope = this.lastClick.N.type_ope;
-        if (num === 1) {
-            this.lastClick.N.type_ope = (type_ope === 'attention' || type_ope === 'today') ? type_ope : 'operated';
-            this.lastClick.setStyle(common_utils.setSingleIconStyle(type, this.lastClick.N.type_ope));
-        } else {
-            this.lastClick.setStyle(common_utils.setJuheIconStyle(num));
+        const lastP = this.lastClick;
+        if (!lastP) return;
+
+        if (lastP.get('name') === 'point') {
+            const type_ope = lastP.get('type_ope');
+            const new_type_poe = (type_ope === 'attention' || type_ope === 'today') ? type_ope : 'operated';
+            lastP.set('type_ope', new_type_poe);
         }
-        this.eventsHandler.onmodalclose(this.lastClick);
+        lastP.set('isActive', false);
+        lastP.setStyle(common_utils.styleFunction(lastP));
+        this.eventsHandler.onmodalclose(lastP);
 
         this.lastClick = null;
     }
@@ -4314,33 +5521,26 @@ class events_Events {
     /**
      * 地图点悬浮事件
      */
-    getSelectInteraction() {
+     getSelectInteraction() {
         const selectInteraction = new ol_default.a.interaction.Select({
             wrapX: false,
             condition: ol_default.a.events.condition.pointerMove,
             filter: function (e) {
-                const name = e.N.name;
-                return name === 'point' || name === 'area' || name === 'line';
+                const name = e.get('name');
+                return name === 'point' || (name === 'area' && e.dataOverlay) || name === 'line';
             }
         });
         selectInteraction.on('select', (e) => {
             // 移入事件
             if (e.selected.length) {
                 const selP = e.selected[0],
-                    name = selP.N.name,
-                    dataOverlay = selP.dataOverlay;
+                name = selP.get('name'),
+                dataOverlay = selP.dataOverlay;
 
-                // 移除上一个点样式
-                if (this.hoverPoints.length) {
-                    const P = this.hoverPoints[0],
-                        isNotLastClick = !this.lastClick || P.N.pointGPS !== this.lastClick.N.pointGPS;
-                    if (isNotLastClick && P.N.name === 'point') {
-                        if (!P.N.aggreCount || P.N.aggreCount === 1) {
-                            P.setStyle(common_utils.setSingleIconStyle(P.N.type, P.N.type_ope));
-                        } else {
-                            P.setStyle(common_utils.setJuheIconStyle(P.N.aggreCount));
-                        }
-                    }
+                // reset lastHover
+                if (this.lastHover && this.lastHover !== this.lastClick) {
+                    this.lastHover.set('isActive', false);
+                    this.lastHover.setStyle(common_utils.styleFunction(this.lastHover));
                 }
 
                 //移除上一个区域弹框, 解决overlay重叠时不触发移出事件的bug
@@ -4356,22 +5556,18 @@ class events_Events {
                     this.areaOverlay = dataOverlay;
                 }
 
-                // 移入点
-                if (name === 'point') {
-                    const count = selP.N.aggreCount;
-                    if (!count || count === 1) {
-                        selP.setStyle(common_utils.setSingleIconStyle(selP.N.type, selP.N.type_ope, 'hover'));
-                    } else {
-                        selP.setStyle(common_utils.setJuheIconStyle(count, 'hover'));
-                    }
-                    this.hoverPoints = [selP];
+                // select point or line
+                if (name === 'point' || name === 'line') {
+                    selP.set('isActive', true);
+                    selP.setStyle(common_utils.styleFunction(selP, true));
+                    this.lastHover = selP;
                 }
 
             } else if (e.deselected.length) {
                 // 移出事件
                 const deSelP = e.deselected[0],
-                    name = deSelP.N.name,
-                    dataOverlay = deSelP.dataOverlay;
+                name = deSelP.get('name'),
+                dataOverlay = deSelP.dataOverlay;
 
                 // 移出区域
                 if (name === 'area' && dataOverlay) {
@@ -4380,17 +5576,14 @@ class events_Events {
                     this.areaOverlay = null;
                 }
 
-                const isNotLastClick = !this.lastClick || deSelP.N.pointGPS !== this.lastClick.N.pointGPS;
-                // 移出点
-                if (name === 'point' && isNotLastClick) {
-                    const count = deSelP.N.aggreCount;
-                    if (!count || count === 1) {
-                        deSelP.setStyle(common_utils.setSingleIconStyle(deSelP.N.type, deSelP.N.type_ope));
-                    } else {
-                        deSelP.setStyle(common_utils.setJuheIconStyle(count));
-                    }
+                const isNotLastClick = !this.lastClick || deSelP !== this.lastClick;
+                // reset point or line
+                if (isNotLastClick && (name === 'point' || name === 'line') ) {
+                    const count = deSelP.get('aggreCount');
+                    deSelP.set('isActive', false);
+                    deSelP.setStyle(common_utils.styleFunction(this.lastHover));
                 }
-                this.hoverPoints = [];
+                this.lastHover = null;
             }
         });
         return selectInteraction;
@@ -4399,7 +5592,7 @@ class events_Events {
     /**
      * 移动缩放事件
      */
-    dragAndMove(e, pointModal) {
+     dragAndMove(e, pointModal) {
         if (e.frameState.animate) {
             return false;
         }
@@ -4622,9 +5815,9 @@ class src_OlMap {
      * 渲染选区，目前包括圆形，矩形和多边形
      */
     renderArea() {
-        const areaData = common_utils.formatAreaData(this.options.area.areaData);
+        const data = common_utils.formatAreaData(this.options.area.data);
         this.removeAllArea();
-        areaData.forEach((item, i) => {
+        data.forEach((item, i) => {
             let areaLayer = view_areaLayer(this.options, item.areaLocation, 'area' + i, item);
             this.map.addLayer(areaLayer);
             areaLayer.btnOverlay && this.map.addOverlay(areaLayer.btnOverlay);

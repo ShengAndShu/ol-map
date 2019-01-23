@@ -169,9 +169,9 @@ class OlMap {
      * 渲染选区，目前包括圆形，矩形和多边形
      */
     renderArea() {
-        const areaData = utils.formatAreaData(this.options.area.areaData);
+        const data = utils.formatAreaData(this.options.area.data);
         this.removeAllArea();
-        areaData.forEach((item, i) => {
+        data.forEach((item, i) => {
             let areaLayer = getAreaLayer(this.options, item.areaLocation, 'area' + i, item);
             this.map.addLayer(areaLayer);
             areaLayer.btnOverlay && this.map.addOverlay(areaLayer.btnOverlay);

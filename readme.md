@@ -34,7 +34,7 @@ const option = {
     area: {
         type: 'normal',
         showTooltip: true,
-        areaData: [{
+        data: [{
             areaType: 2,  // 圆形
             areaLocation: "",
             areaName: 'hello',
@@ -97,7 +97,7 @@ const option = {
 
     默认值：’false’
 
-* `area.areaData` | array<object> | 区域图层的数据
+* `area.data` | array<object> | 区域图层的数据
 
     默认值：[ ] （draw出来的选框不用配置此项）
 
