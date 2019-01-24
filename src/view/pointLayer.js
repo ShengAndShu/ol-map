@@ -37,7 +37,8 @@ const getPointLayer = (options) => {
 
     return new ol.layer.Vector({
         source: source,
-        wrapX: false
+        wrapX: false,
+        zIndex: 9
     });
 };
 

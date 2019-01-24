@@ -11,31 +11,31 @@ import circlePng from '../assets/images/circle.png';
 /**
  * 公共方法
  */
- const utils = {
+const utils = {
     isBigScreen: false,
     styleFunction: (feature, isHover) => {
-        const name = feature.N.name;
-        switch(name) {
+        const name = feature.get('name');
+        switch (name) {
             case 'point':
-            const count = feature.N.aggreCount,
-            type = feature.N.type,
-            type_ope = feature.N.type_ope;
-            if (count > 1) {
-                return utils.setJuheIconStyle(count, isHover);
-            } else {
-                return utils.setSingleIconStyle(type, type_ope, isHover);
-            }
-            break;
+                const count = feature.get('aggreCount'),
+                    type = feature.get('type'),
+                    type_ope = feature.get('type_ope');
+                if (count > 1) {
+                    return utils.setJuheIconStyle(count, isHover);
+                } else {
+                    return utils.setSingleIconStyle(type, type_ope, isHover);
+                }
+                break;
             case 'line':
-            return utils.getLineStyle(feature.N.label, isHover);
+                return utils.getLineStyle(feature.get('label'), isHover);
         }
     },
     /**
      * 聚合点样式
      * len 聚合个数
-     * isHover 
+     * isHover
      */
-     setJuheIconStyle: (len, isHover) => {
+    setJuheIconStyle: (len, isHover) => {
         return new ol.style.Style({
             image: new ol.style.Icon(({
                 color: isHover ? '#3da6f5' : '#F54336',
@@ -59,10 +59,10 @@ import circlePng from '../assets/images/circle.png';
      * opType: unOperate未操作 operated已操作 attention预警  today 24小时
      * isHover
      */
-     setSingleIconStyle: (type, opType, isHover) => {
+    setSingleIconStyle: (type, opType, isHover) => {
         let src,
-        color = '#f00',
-        isAttention = opType === 'attention';
+            color = '#f00',
+            isAttention = opType === 'attention';
         if (isHover) {
             color = '#0096ff';
         } else if (opType === 'operated') {
@@ -105,7 +105,7 @@ import circlePng from '../assets/images/circle.png';
      * @param type
      * @param isHover
      */
-     getAreaStyle: (type, isHover) => {
+    getAreaStyle: (type, isHover) => {
         const isBigscreen = type && type.toLowerCase() === 'bigscreen';
         return new ol.style.Style({
             stroke: new ol.style.Stroke({
@@ -119,28 +119,28 @@ import circlePng from '../assets/images/circle.png';
         })
     },
 
-     /**
+    /**
      * 线样式
      * @param text
      * @param isHover
      */
-     getLineStyle: (text, isHover) => {
+    getLineStyle: (text, isHover) => {
         return new ol.style.Style({
             text: new ol.style.Text({
                 text: text,
                 font: '16px arial,sans-serif',
                 padding: [10, 10, 10, 10],
-                    stroke: new ol.style.Stroke({   // 不加半透明stroke的话，点击文字背景不会选中
-                        color: 'rgba(255,255,255,.1)',
-                        width: 8
-                    }),
-                    fill: new ol.style.Fill({
-                        color: isHover ? '#0096ff' : '#000'
-                    }),
-                    placement: 'line',
-                    textBaseline: 'bottom',
-                    offsetY: -2
+                stroke: new ol.style.Stroke({   // 不加半透明stroke的话，点击文字背景不会选中
+                    color: 'rgba(255,255,255,.1)',
+                    width: 8
                 }),
+                fill: new ol.style.Fill({
+                    color: isHover ? '#0096ff' : '#000'
+                }),
+                placement: 'line',
+                textBaseline: 'bottom',
+                offsetY: -2
+            }),
             stroke: new ol.style.Stroke({
                 color: isHover ? '#0096ff' : '#3db94c',
                 width: 1
@@ -153,7 +153,7 @@ import circlePng from '../assets/images/circle.png';
      * @param text
      * @param isHover
      */
-     getArrowStyle: (isHover) => {
+    getArrowStyle: (isHover) => {
         return new ol.style.Style({
             stroke: new ol.style.Stroke({
                 color: isHover ? '#0096ff' : '#3db94c',
@@ -169,22 +169,22 @@ import circlePng from '../assets/images/circle.png';
      * 获取当前地图视口左上角和右下角的坐标
      * @param map
      */
-     getViewGps: (map) => {
+    getViewGps: (map) => {
         let extent = map.getView().calculateExtent(map.getSize()),
             //上左的坐标
             getTopLeft = ol.proj.transform(ol.extent.getTopLeft(extent), 'EPSG:3857', 'EPSG:4326'),
             //下右的坐标
             getBottomRight = ol.proj.transform(ol.extent.getBottomRight(extent), 'EPSG:3857', 'EPSG:4326');
-            return [getTopLeft, getBottomRight];
-        },
+        return [getTopLeft, getBottomRight];
+    },
 
     /**
      * 格式化区域的data
      * @param data
      */
-     formatAreaData: (data) => {
+    formatAreaData: (data) => {
         return data.map(item => {
-            if(item.areaType === '2' || item.areaType === 2) {
+            if (item.areaType === '2' || item.areaType === 2) {
                 let center = item.center.split(',').map(str => parseFloat(str));
                 center = ol.proj.fromLonLat(center);
                 const location = {
@@ -192,7 +192,7 @@ import circlePng from '../assets/images/circle.png';
                     radius: item.radius * 1000
                 };
                 return Object.assign({}, item, {areaLocation: location});
-            }else {
+            } else {
                 const gpsList = item.areaLocation.split(',').map(str => parseFloat(str));
                 const location = utils.getCoordinates(gpsList).map(d => ol.proj.fromLonLat(d));
                 return Object.assign({}, item, {areaLocation: location});
@@ -205,14 +205,14 @@ import circlePng from '../assets/images/circle.png';
      * @param data  坐标集合  number[]
      * @returns {Array}
      */
-     getCoordinates: (data) => {
+    getCoordinates: (data) => {
         let coordinates = [];
         let len = data.length;
         // 矩形区域有时在项目中保存的只有左上角和右下角的坐标，兼容性考虑
         if (len === 4) {
             const [x1, y1, x2, y2] = data;
             coordinates = [[x1, y1], [x1, y2], [x2, y2], [x2, y1], [x1, y1]];
-        }else {
+        } else {
             // 如果 data 中的坐标数据不是闭合的（终点不等于起点）, 将其闭合
             if (data[0] !== data[len - 2] || data[1] !== data[len - 1]) {
                 data.push(data[0]);
@@ -231,7 +231,7 @@ import circlePng from '../assets/images/circle.png';
      * coordinate转换为经纬度，经度可以大于180或小于-180 （toLonLat 会把不合法的经纬度换成合法的，画区超过地图边界时需要不合法坐标）
      * @param coordinate
      */
-     toGps: (coordinate) => {
+    toGps: (coordinate) => {
         let gps = ol.proj.toLonLat(coordinate);
         if (coordinate[0] > 20037508.342789244) {
             gps[0] = gps[0] + 360;
@@ -247,7 +247,7 @@ import circlePng from '../assets/images/circle.png';
      * @param type 'coordinate' 或 不填
      * @returns {ol.Coordinate}
      */
-     getCenter: (map, type) => {
+    getCenter: (map, type) => {
         const center = map.getView().getCenter();
         if (type === 'coordinate') {
             return center;
@@ -261,7 +261,7 @@ import circlePng from '../assets/images/circle.png';
      * @param map
      * @param gps
      */
-     setCenter: (map, gps) => {
+    setCenter: (map, gps) => {
         const center = ol.proj.fromLonLat([parseFloat(gps[0]), parseFloat(gps[1])]);
         map.getView().setCenter(center);
     },
@@ -273,7 +273,7 @@ import circlePng from '../assets/images/circle.png';
      * @param arrowHeight 箭头的高度
      * @returns {ol.geom.Polygon}
      */
-     getArrow: (rPoint, endPoint, arrowHeight) => {
+    getArrow: (rPoint, endPoint, arrowHeight) => {
         //箭头底和高的交点位置
         const mPoint = [];
         //头与交点的位移差
@@ -295,7 +295,7 @@ import circlePng from '../assets/images/circle.png';
         const halfBottomLen = arrowHeight / 3;
         // 箭头的另外两个顶点
         const point1 = [],
-        point2 = [];
+            point2 = [];
         const _x = halfBottomLen * Math.abs(diffY / arrowHeight);
         const _y = halfBottomLen * Math.abs(diffX / arrowHeight);
         if (diffY === 0) {
@@ -325,7 +325,7 @@ import circlePng from '../assets/images/circle.png';
         }
         return new ol.geom.Polygon([
             [endPoint, point1, point2, endPoint]
-            ]);
+        ]);
     }
 };
 export default utils;

@@ -115,7 +115,7 @@
             };
             myMap.setOption(option);
             myMap.on('pointclick', (ev) => {
-                const gps = ev.N.aggreGPS;
+                const gps = ev.get('aggreGPS');
                 const popup = document.querySelector('#popup');
                 const content = document.querySelector('.content');
                 myMap.renderPointModal(gps, 'popup');
@@ -126,9 +126,9 @@
             myMap.on('lineclick', (ev) => {
                 const popup = document.querySelector('#popup');
                 const content = document.querySelector('.content');
-                myMap.renderPointModal(ev.middle, 'popup');
+                myMap.renderPointModal(ev.coords[1], 'popup');
                 popup.style.display = 'block';
-                content.innerHTML = 'count:' + ev.feature.N.label;
+                content.innerHTML = 'count:' + ev.feature.get('label');
                 console.log('lineclick', ev);
 
             });

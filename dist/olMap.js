@@ -63,7 +63,7 @@
 /******/
 /******/ 	var hotApplyOnUpdate = true;
 /******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	var hotCurrentHash = "2a8d5eae780c4cc2765f";
+/******/ 	var hotCurrentHash = "906345a33ab860ed16da";
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule;
@@ -2693,31 +2693,31 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
 /**
  * 公共方法
  */
- const utils = {
+const utils = {
     isBigScreen: false,
     styleFunction: (feature, isHover) => {
-        const name = feature.N.name;
-        switch(name) {
+        const name = feature.get('name');
+        switch (name) {
             case 'point':
-            const count = feature.N.aggreCount,
-            type = feature.N.type,
-            type_ope = feature.N.type_ope;
-            if (count > 1) {
-                return utils.setJuheIconStyle(count, isHover);
-            } else {
-                return utils.setSingleIconStyle(type, type_ope, isHover);
-            }
-            break;
+                const count = feature.get('aggreCount'),
+                    type = feature.get('type'),
+                    type_ope = feature.get('type_ope');
+                if (count > 1) {
+                    return utils.setJuheIconStyle(count, isHover);
+                } else {
+                    return utils.setSingleIconStyle(type, type_ope, isHover);
+                }
+                break;
             case 'line':
-            return utils.getLineStyle(feature.N.label, isHover);
+                return utils.getLineStyle(feature.get('label'), isHover);
         }
     },
     /**
      * 聚合点样式
      * len 聚合个数
-     * isHover 
+     * isHover
      */
-     setJuheIconStyle: (len, isHover) => {
+    setJuheIconStyle: (len, isHover) => {
         return new ol_default.a.style.Style({
             image: new ol_default.a.style.Icon(({
                 color: isHover ? '#3da6f5' : '#F54336',
@@ -2741,10 +2741,10 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
      * opType: unOperate未操作 operated已操作 attention预警  today 24小时
      * isHover
      */
-     setSingleIconStyle: (type, opType, isHover) => {
+    setSingleIconStyle: (type, opType, isHover) => {
         let src,
-        color = '#f00',
-        isAttention = opType === 'attention';
+            color = '#f00',
+            isAttention = opType === 'attention';
         if (isHover) {
             color = '#0096ff';
         } else if (opType === 'operated') {
@@ -2787,7 +2787,7 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
      * @param type
      * @param isHover
      */
-     getAreaStyle: (type, isHover) => {
+    getAreaStyle: (type, isHover) => {
         const isBigscreen = type && type.toLowerCase() === 'bigscreen';
         return new ol_default.a.style.Style({
             stroke: new ol_default.a.style.Stroke({
@@ -2801,28 +2801,28 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
         })
     },
 
-     /**
+    /**
      * 线样式
      * @param text
      * @param isHover
      */
-     getLineStyle: (text, isHover) => {
+    getLineStyle: (text, isHover) => {
         return new ol_default.a.style.Style({
             text: new ol_default.a.style.Text({
                 text: text,
                 font: '16px arial,sans-serif',
                 padding: [10, 10, 10, 10],
-                    stroke: new ol_default.a.style.Stroke({   // 不加半透明stroke的话，点击文字背景不会选中
-                        color: 'rgba(255,255,255,.1)',
-                        width: 8
-                    }),
-                    fill: new ol_default.a.style.Fill({
-                        color: isHover ? '#0096ff' : '#000'
-                    }),
-                    placement: 'line',
-                    textBaseline: 'bottom',
-                    offsetY: -2
+                stroke: new ol_default.a.style.Stroke({   // 不加半透明stroke的话，点击文字背景不会选中
+                    color: 'rgba(255,255,255,.1)',
+                    width: 8
                 }),
+                fill: new ol_default.a.style.Fill({
+                    color: isHover ? '#0096ff' : '#000'
+                }),
+                placement: 'line',
+                textBaseline: 'bottom',
+                offsetY: -2
+            }),
             stroke: new ol_default.a.style.Stroke({
                 color: isHover ? '#0096ff' : '#3db94c',
                 width: 1
@@ -2835,7 +2835,7 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
      * @param text
      * @param isHover
      */
-     getArrowStyle: (isHover) => {
+    getArrowStyle: (isHover) => {
         return new ol_default.a.style.Style({
             stroke: new ol_default.a.style.Stroke({
                 color: isHover ? '#0096ff' : '#3db94c',
@@ -2851,22 +2851,22 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
      * 获取当前地图视口左上角和右下角的坐标
      * @param map
      */
-     getViewGps: (map) => {
+    getViewGps: (map) => {
         let extent = map.getView().calculateExtent(map.getSize()),
             //上左的坐标
             getTopLeft = ol_default.a.proj.transform(ol_default.a.extent.getTopLeft(extent), 'EPSG:3857', 'EPSG:4326'),
             //下右的坐标
             getBottomRight = ol_default.a.proj.transform(ol_default.a.extent.getBottomRight(extent), 'EPSG:3857', 'EPSG:4326');
-            return [getTopLeft, getBottomRight];
-        },
+        return [getTopLeft, getBottomRight];
+    },
 
     /**
      * 格式化区域的data
      * @param data
      */
-     formatAreaData: (data) => {
+    formatAreaData: (data) => {
         return data.map(item => {
-            if(item.areaType === '2' || item.areaType === 2) {
+            if (item.areaType === '2' || item.areaType === 2) {
                 let center = item.center.split(',').map(str => parseFloat(str));
                 center = ol_default.a.proj.fromLonLat(center);
                 const location = {
@@ -2874,7 +2874,7 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
                     radius: item.radius * 1000
                 };
                 return Object.assign({}, item, {areaLocation: location});
-            }else {
+            } else {
                 const gpsList = item.areaLocation.split(',').map(str => parseFloat(str));
                 const location = utils.getCoordinates(gpsList).map(d => ol_default.a.proj.fromLonLat(d));
                 return Object.assign({}, item, {areaLocation: location});
@@ -2887,14 +2887,14 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
      * @param data  坐标集合  number[]
      * @returns {Array}
      */
-     getCoordinates: (data) => {
+    getCoordinates: (data) => {
         let coordinates = [];
         let len = data.length;
         // 矩形区域有时在项目中保存的只有左上角和右下角的坐标，兼容性考虑
         if (len === 4) {
             const [x1, y1, x2, y2] = data;
             coordinates = [[x1, y1], [x1, y2], [x2, y2], [x2, y1], [x1, y1]];
-        }else {
+        } else {
             // 如果 data 中的坐标数据不是闭合的（终点不等于起点）, 将其闭合
             if (data[0] !== data[len - 2] || data[1] !== data[len - 1]) {
                 data.push(data[0]);
@@ -2913,7 +2913,7 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
      * coordinate转换为经纬度，经度可以大于180或小于-180 （toLonLat 会把不合法的经纬度换成合法的，画区超过地图边界时需要不合法坐标）
      * @param coordinate
      */
-     toGps: (coordinate) => {
+    toGps: (coordinate) => {
         let gps = ol_default.a.proj.toLonLat(coordinate);
         if (coordinate[0] > 20037508.342789244) {
             gps[0] = gps[0] + 360;
@@ -2929,7 +2929,7 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
      * @param type 'coordinate' 或 不填
      * @returns {ol.Coordinate}
      */
-     getCenter: (map, type) => {
+    getCenter: (map, type) => {
         const center = map.getView().getCenter();
         if (type === 'coordinate') {
             return center;
@@ -2943,7 +2943,7 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
      * @param map
      * @param gps
      */
-     setCenter: (map, gps) => {
+    setCenter: (map, gps) => {
         const center = ol_default.a.proj.fromLonLat([parseFloat(gps[0]), parseFloat(gps[1])]);
         map.getView().setCenter(center);
     },
@@ -2955,7 +2955,7 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
      * @param arrowHeight 箭头的高度
      * @returns {ol.geom.Polygon}
      */
-     getArrow: (rPoint, endPoint, arrowHeight) => {
+    getArrow: (rPoint, endPoint, arrowHeight) => {
         //箭头底和高的交点位置
         const mPoint = [];
         //头与交点的位移差
@@ -2977,7 +2977,7 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
         const halfBottomLen = arrowHeight / 3;
         // 箭头的另外两个顶点
         const point1 = [],
-        point2 = [];
+            point2 = [];
         const _x = halfBottomLen * Math.abs(diffY / arrowHeight);
         const _y = halfBottomLen * Math.abs(diffX / arrowHeight);
         if (diffY === 0) {
@@ -3007,7 +3007,7 @@ var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
         }
         return new ol_default.a.geom.Polygon([
             [endPoint, point1, point2, endPoint]
-            ]);
+        ]);
     }
 };
 /* harmony default export */ var common_utils = (utils);
@@ -3332,7 +3332,8 @@ const getPointLayer = (options) => {
 
     return new ol_default.a.layer.Vector({
         source: source,
-        wrapX: false
+        wrapX: false,
+        zIndex: 9
     });
 };
 
@@ -5581,7 +5582,7 @@ class effectLine_EffectLine {
                 if (isNotLastClick && (name === 'point' || name === 'line') ) {
                     const count = deSelP.get('aggreCount');
                     deSelP.set('isActive', false);
-                    deSelP.setStyle(common_utils.styleFunction(this.lastHover));
+                    deSelP.setStyle(common_utils.styleFunction(deSelP));
                 }
                 this.lastHover = null;
             }

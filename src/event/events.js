@@ -207,7 +207,7 @@ import utils from '../common/utils';
                 if (isNotLastClick && (name === 'point' || name === 'line') ) {
                     const count = deSelP.get('aggreCount');
                     deSelP.set('isActive', false);
-                    deSelP.setStyle(utils.styleFunction(this.lastHover));
+                    deSelP.setStyle(utils.styleFunction(deSelP));
                 }
                 this.lastHover = null;
             }
