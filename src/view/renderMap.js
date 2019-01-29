@@ -6,26 +6,25 @@ import ol from 'openlayers';
  * @returns {ol.Map}
  */
 const getMap = (domId, opts) => {
-    const params = {
-        LAYERS: opts.tileLayer,
-        tiled: true,
-        SRS: 'EPSG:3857',
-        TRANSPARENT: false
-    };
-    const rasterLayer = new ol.layer.Tile({
+    const wmsLayer = new ol.layer.Tile({
         visiable: true,
         source: new ol.source.TileWMS({
             url: opts.mapUrl,
-            params: params,
-            wrapX: false
+            wrapX: false,
+            params: {
+                LAYERS: opts.tileLayer,
+                tiled: true,
+                SRS: 'EPSG:3857',
+                TRANSPARENT: false
+            }
         })
     });
-    const OSMLayer = new ol.layer.Tile({
+    const osmLayer = new ol.layer.Tile({
         source: new ol.source.OSM({wrapX: false})
     });
     const mapCenter = opts.mapCenter || [97.03125, 29.362721750200926];
     return new ol.Map({
-        layers: [opts.useOSM ? OSMLayer : rasterLayer],
+        layers: [opts.useOSM ? osmLayer : wmsLayer],
         target: domId,
         view: new ol.View({
             center: ol.proj.fromLonLat(mapCenter),

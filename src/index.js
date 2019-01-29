@@ -140,6 +140,9 @@ class OlMap {
      * 开始线动画播放（相当于是不停播放的单轨迹）
      */
     startEffectLine() {
+        if (!this.options.effectLine) {
+            return;
+        }
         if (this.effectLine) {
             this.effectLine.clear();
         }

@@ -61,7 +61,7 @@ import utils from '../common/utils';
         const num = feature.get('aggreCount') || 1,
         type = feature.get('type'),
         type_ope = feature.get('type_ope');
-        const style = num === 1 ? utils.setSingleIconStyle(type, type_ope, 'hover') : utils.setJuheIconStyle(num, 'hover');
+        const style = num === 1 ? utils.getSingleIconStyle(type, type_ope, 'hover') : utils.getJuheIconStyle(num, 'hover');
         feature.setStyle(style);
 
         this.lastClick = feature;
@@ -205,7 +205,6 @@ import utils from '../common/utils';
                 const isNotLastClick = !this.lastClick || deSelP !== this.lastClick;
                 // reset point or line
                 if (isNotLastClick && (name === 'point' || name === 'line') ) {
-                    const count = deSelP.get('aggreCount');
                     deSelP.set('isActive', false);
                     deSelP.setStyle(utils.styleFunction(deSelP));
                 }

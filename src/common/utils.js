@@ -21,13 +21,14 @@ const utils = {
                     type = feature.get('type'),
                     type_ope = feature.get('type_ope');
                 if (count > 1) {
-                    return utils.setJuheIconStyle(count, isHover);
+                    return utils.getJuheIconStyle(count, isHover);
                 } else {
-                    return utils.setSingleIconStyle(type, type_ope, isHover);
+                    return utils.getSingleIconStyle(type, type_ope, isHover);
                 }
                 break;
             case 'line':
                 return utils.getLineStyle(feature.get('label'), isHover);
+                break;
         }
     },
     /**
@@ -35,7 +36,7 @@ const utils = {
      * len 聚合个数
      * isHover
      */
-    setJuheIconStyle: (len, isHover) => {
+    getJuheIconStyle: (len, isHover) => {
         return new ol.style.Style({
             image: new ol.style.Icon(({
                 color: isHover ? '#3da6f5' : '#F54336',
@@ -59,7 +60,7 @@ const utils = {
      * opType: unOperate未操作 operated已操作 attention预警  today 24小时
      * isHover
      */
-    setSingleIconStyle: (type, opType, isHover) => {
+    getSingleIconStyle: (type, opType, isHover) => {
         let src,
             color = '#f00',
             isAttention = opType === 'attention';
@@ -100,6 +101,23 @@ const utils = {
         }
     },
 
+    getCircleStyle: (label) => {
+        return new ol.style.Style({
+            image: new ol.style.Icon(({
+                color: '#3db94c',
+                src: circlePng,
+                anchor: [0.5, 0.5]
+            })),
+            text: new ol.style.Text({
+                text: label,
+                fill: new ol.style.Fill({
+                    color: '#3db94c'
+                }),
+                offsetY: 14
+            })
+        })
+    },
+
     /**
      * 区域样式
      * @param type
@@ -135,7 +153,7 @@ const utils = {
                     width: 8
                 }),
                 fill: new ol.style.Fill({
-                    color: isHover ? '#0096ff' : '#000'
+                    color: isHover ? '#0096ff' : '#3db94c'
                 }),
                 placement: 'line',
                 textBaseline: 'bottom',
@@ -150,7 +168,6 @@ const utils = {
 
     /**
      * arrow style
-     * @param text
      * @param isHover
      */
     getArrowStyle: (isHover) => {

@@ -5,17 +5,19 @@ import bezierSpline from '@turf/bezier-spline';
 class EffectLine {
     constructor(map, option) {
         this.map = map;
-        this.data = option.data;
+        this.lineData = option.lineData;
+        this.pointData = option.pointData;
         this.duration = 3000;           // 动画时间
         this.curveness = 0.1;           // 贝塞尔曲线的弯曲程度，0~1，值越大越弯曲
         this.startTime = 0;             // 动画开始的时间
-        this.features = [];             // features集合
+        this.lineFeatures = [];              // lineFeatures集合
+        this.pointFeatures = [];             // pointFeatures
         this.layer = null;              // 线的图层
         this.animateFun = (ev) => this.animate(ev);    // 渲染的回调（用箭头函数确保animate中的this指向）
     }
 
     start() {
-        this.getLinesAndLayer();
+        this.getFeaturesAndLayer();
         this.startTime = new Date().getTime();
         this.map.on('postcompose', this.animateFun);
         this.map.render();
@@ -26,28 +28,40 @@ class EffectLine {
         this.map.removeLayer(this.layer);
     }
 
-    // 获取line features 和 layer
-    getLinesAndLayer() {
-        const data = this.data;
-        for (let i = 0, l = data.length; i < l; i++) {
-            const item = data[i];
-            const coords = item.coords;
-            const line = this.getBezierLine(ol.proj.fromLonLat(coords[0]), ol.proj.fromLonLat(coords[1]));
+    // 获取features 和 layer
+    getFeaturesAndLayer() {
+        const lineData = this.lineData;
+        for (let i = 0, l = lineData.length; i < l; i++) {
+            const item = lineData[i];
+            const gps = item.gps;
+            const line = this.getBezierLine(ol.proj.fromLonLat(gps[0]), ol.proj.fromLonLat(gps[1]));
 
             const label = String(item.label);
-            const feature = new ol.Feature({
+            const lineFeature = new ol.Feature({
                 name: 'line',
                 label: label,
                 geometry: line,
                 originData: item
             });
             const lineStyle = utils.getLineStyle(label);
-            feature.setStyle(lineStyle);
-            this.features.push(feature);
+            lineFeature.setStyle(lineStyle);
+            this.lineFeatures.push(lineFeature);
+        }
+        const pointData = this.pointData;
+        for (let i = 0, l = pointData.length; i < l; i++) {
+            const item = pointData[i];
+            const label = String(item.label);
+            const pointFeature = new ol.Feature({
+                geometry: new ol.geom.Point(ol.proj.fromLonLat(item.gps)),
+                originData: item
+            });
+            const pointStyle = utils.getCircleStyle(label);
+            pointFeature.setStyle(pointStyle);
+            this.pointFeatures.push(pointFeature);
         }
         this.layer = new ol.layer.Vector({
             source: new ol.source.Vector({
-                features: this.features,
+                features: this.lineFeatures.concat(this.pointFeatures),
                 wrapX: false
             }),
             wrapX: false
@@ -65,7 +79,7 @@ class EffectLine {
         const zoom = this.map.getView().getZoom();
         const unitDistance = 10000 * Math.pow(2, 5 - zoom);
         const arrowHeight = 5 * unitDistance;
-        const features = this.features;
+        const features = this.lineFeatures;
         for (let i = 0, l = features.length; i < l; i++) {
             const feature = features[i];
             const isActive = feature.get('isActive');
