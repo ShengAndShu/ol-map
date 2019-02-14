@@ -2,7 +2,7 @@
 ===
 * 渲染图层。包括：点图层（包括单点和聚合点），热力图层，几何区域图层等
 
-* 特殊功能。画区，轨迹播放，点位冒泡
+* 特殊功能。画区，轨迹播放，线动画，点位冒泡
 
 * 监听事件。点位点击，鼠标悬浮，地图移动，弹框关闭，区域移除，框选结束等
 
@@ -51,6 +51,16 @@ const option = {
     },
     pointModal: {
         autoClose: 'all'
+    },
+    effectLine: {
+        lineData: [
+            {label: 1, gps: [[20, 20], [80, 30]]},
+            {label: '2222', gps: [[30, 40], [80, 30]]},
+            {label: '2222', gps: [[-175, 40], [175, 30]]}
+        ],
+        pointData: [
+            {label: '中国', gps: [80, 30]}
+        ]
     }
 };
 ```
@@ -58,7 +68,7 @@ const option = {
 * `useOSM` | boolean | 是否使用OSM在线地图（为true时mapUrl将无效）
 
     默认值：false
-    
+
 * `mapUrl` | string | 本地地图服务的地址
 
     默认值：''
@@ -121,6 +131,16 @@ const option = {
 
     默认值：false
 
+* `effectLine` | 线动画
+
+* `effectLine.lineData` | array<object> | 连线的数据
+
+    默认值：null
+
+* `effectLine.pointData` | array<object> | 顶点的数据
+
+    默认值：null
+
 API:
 ===
 
@@ -145,6 +165,8 @@ API:
 * `startTrail()`: 开始轨迹播放
 
 * `stopTrail()`: 暂停轨迹播放
+
+* `startEffectLine()`: 开始线动画播放
 
 * `continueTrail()`: 继续轨迹播放
 

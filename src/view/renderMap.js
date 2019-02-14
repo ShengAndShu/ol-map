@@ -6,6 +6,7 @@ import ol from 'openlayers';
  * @returns {ol.Map}
  */
 const getMap = (domId, opts) => {
+    // 后台提供 geo server
     const wmsLayer = new ol.layer.Tile({
         visiable: true,
         source: new ol.source.TileWMS({
@@ -19,6 +20,7 @@ const getMap = (domId, opts) => {
             }
         })
     });
+    // 在线OSM
     const osmLayer = new ol.layer.Tile({
         source: new ol.source.OSM({wrapX: false})
     });

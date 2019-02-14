@@ -6,8 +6,8 @@ import utils from '../common/utils';
  */
  export default class Events {
     constructor(map, options, eventsHandler) {
-        this.map = map;
-        this.options = options;
+        this.map = map;          // 地图对象
+        this.options = options;  // 配置项
         this.eventsHandler = eventsHandler;
         this.lastClick = null;   // 上一次点击的点或线
         this.lastZoom = null;    // 缩放前的层级
@@ -107,7 +107,7 @@ import utils from '../common/utils';
         const data = {
             coords: [start, middle, end],
             feature: feature
-        }
+        };
         this.lastClick = feature;
         this.eventsHandler.onlineclick(data);
     }

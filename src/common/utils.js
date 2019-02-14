@@ -12,7 +12,6 @@ import circlePng from '../assets/images/circle.png';
  * 公共方法
  */
 const utils = {
-    isBigScreen: false,
     styleFunction: (feature, isHover) => {
         const name = feature.get('name');
         switch (name) {

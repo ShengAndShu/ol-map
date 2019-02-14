@@ -28,6 +28,14 @@ const getBtnOverlay = (position, index, showCancelBtn, showSearchBtn) => {
     });
 };
 
+/**
+ * 创建 area tooltip
+ * @param pos  [[number,number],[number,number]]
+ * @param index  string
+ * @param areaData  object
+ * @param overlayType  'normal' | 'bigscreen'
+ * @returns {ol.Overlay}
+ */
 const getInfoOverlay = (pos, index, areaData, overlayType) => {
     let type = overlayType || '';
     type = type.toLowerCase() === 'bigscreen' ? 'bigscreen' : 'normal';

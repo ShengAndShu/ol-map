@@ -18,22 +18,23 @@ class OlMap {
         this.eventsHandler = new EventsHandler();
         this.ol = ol;
         this.options = {
-            useOSM: false,
-            mapUrl: '',
-            tileLayer: '',
-            mapCenter: [97.03125, 29.362721750200926],
-            zoom: 3,
-            data: [],
-            draw: {},
-            pointModal: {
+            useOSM: false,           // 是否使用在线的OSM
+            mapUrl: '',              // 后台 geo server url （useOSM为false时生效）
+            tileLayer: '',           // 后台 geo server map layer
+            mapCenter: [97.03125, 29.362721750200926],      // 地图默认中心点
+            zoom: 3,                 // 地图默认zoom层级
+            data: [],                // 地图点数据
+            draw: {},                // 画区相关配置项
+            pointModal: {            // 点详情框的配置项
                 autoClose: 'zoom'
             }
         };
-        this.heatLayer = null;
-        this.pointLayer = null;
-        this.pointModal = null;
-        this.trail = null;
-        this.draw = null;
+        this.heatLayer = null;       // 热力图层
+        this.pointLayer = null;      // 点图层
+        this.pointModal = null;      // 点详情框
+        this.trail = null;           // 通话轨迹对象
+        this.effectLine = null;      // 线动画对象
+        this.draw = null;            // 画区交互对象
     }
 
     setOption(opts) {
@@ -152,7 +153,7 @@ class OlMap {
 
     /**
      * 开始画区
-     * @param type   box,circle,polygon
+     * @param type   'box','circle','polygon'
      */
     startDraw(type) {
         type = type || 'box';
@@ -250,6 +251,6 @@ class OlMap {
 }
 const olMap = {
     init: domId => new OlMap(domId)
-}
+};
 window.olMap = olMap;
 export default olMap;
