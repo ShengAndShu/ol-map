@@ -30,11 +30,12 @@ class EffectLine {
 
     // 获取features 和 layer
     getFeaturesAndLayer() {
+        // 获取line features
         const lineData = this.lineData;
         for (let i = 0, l = lineData.length; i < l; i++) {
             const item = lineData[i];
             const gps = item.gps;
-            const line = this.getBezierLine(ol.proj.fromLonLat(gps[0]), ol.proj.fromLonLat(gps[1]));
+            const line = utils.getBezierLine(ol.proj.fromLonLat(gps[0]), ol.proj.fromLonLat(gps[1]), this.curveness);
 
             const label = String(item.label);
             const lineFeature = new ol.Feature({
@@ -47,6 +48,7 @@ class EffectLine {
             lineFeature.setStyle(lineStyle);
             this.lineFeatures.push(lineFeature);
         }
+        // 获取point features
         const pointData = this.pointData;
         for (let i = 0, l = pointData.length; i < l; i++) {
             const item = pointData[i];
@@ -59,6 +61,7 @@ class EffectLine {
             pointFeature.setStyle(pointStyle);
             this.pointFeatures.push(pointFeature);
         }
+        // 获取layer
         this.layer = new ol.layer.Vector({
             source: new ol.source.Vector({
                 features: this.lineFeatures.concat(this.pointFeatures),
@@ -114,24 +117,6 @@ class EffectLine {
 
         // 触发地图重新渲染
         this.map.render();
-    }
-
-    // 根据起点和终点获取贝塞尔曲线
-    getBezierLine(p1, p2) {
-        const middle = [
-            (p1[0] + p2[0]) / 2 - (p1[1] - p2[1]) * this.curveness,
-            (p1[1] + p2[1]) / 2 - (p2[0] - p1[0]) * this.curveness
-        ];
-        const geoJson = {
-            "type": "Feature",
-            "properties": {},
-            "geometry": {
-                "type": "LineString",
-                "coordinates": [p1, middle, p2]
-            }
-        };
-        const curved = bezierSpline(geoJson);
-        return new ol.geom.LineString(curved["geometry"]["coordinates"]);
     }
 }
 

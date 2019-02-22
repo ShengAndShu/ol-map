@@ -7,6 +7,7 @@ import crAttentionPng from '../assets/images/cr-attention.png';
 import luAttentionPng from '../assets/images/lu-attention.png';
 import smsAttentionPng from '../assets/images/sms-attention.png';
 import circlePng from '../assets/images/circle.png';
+import bezierSpline from '@turf/bezier-spline';
 
 /**
  * 公共方法
@@ -342,6 +343,24 @@ const utils = {
         return new ol.geom.Polygon([
             [endPoint, point1, point2, endPoint]
         ]);
+    },
+
+    // 根据起点和终点获取贝塞尔曲线
+    getBezierLine(p1, p2, curveness) {
+        const middle = [
+            (p1[0] + p2[0]) / 2 - (p1[1] - p2[1]) * curveness,
+            (p1[1] + p2[1]) / 2 - (p2[0] - p1[0]) * curveness
+        ];
+        const geoJson = {
+            "type": "Feature",
+            "properties": {},
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [p1, middle, p2]
+            }
+        };
+        const curved = bezierSpline(geoJson);
+        return new ol.geom.LineString(curved["geometry"]["coordinates"]);
     }
 };
 export default utils;

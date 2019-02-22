@@ -1,237 +1,168 @@
 import ol from 'openlayers';
 import utils from '../common/utils';
-import arc from './arc';
 
-const TrailStatus = {
-    START: 'start',
-    STOPED: 'stoped'
-};
-const GLOBAL = {
-    BACK_LIST: [],
-    NUM: 1,         // 多个终端时，终端的index
-    ZOOM: 3.0,
-    MIN_TIME: 0,
-    MAX_TIME: 0
-};
-let globalNum = 0,      // 轨迹的index
-    timer = null,
-    _timer = null,
-    $THIS = null;
-
-const TrailStatusParam = function () {
-    let status = TrailStatus.START;
-    this.getStatus = function () {
-        return status;
-    };
-    this.setStatus = function (st) {
-        status = st;
-    };
-    let time = null;
-    this.getTime = function () {
-        return time;
-    };
-    this.setTime = function (st) {
-        time = st;
-    };
-};
-
-const PlayTrail = function (opt_options) {
-    const _options = opt_options;
-    this.lineStyle = _options.lineStyle || new ol.style.Style({
-        stroke: new ol.style.Stroke({
-            color: '#0000FF',
-            width: 2
-        }),
-        fill: new ol.style.Fill({
-            color: '#0000FF'
-        }),
-    });
-    this.markStyle = _options.markStyle || new ol.style.Style({
-        image: new ol.style.Circle({
-            radius: 7,
-            snapToPixel: false,
-            fill: new ol.style.Fill({
-                color: 'red'
-            }),
-            stroke: new ol.style.Stroke({
-                color: 'white',
-                width: 2
-            })
-        })
-    });
-    this.duration = _options.duration;
-    this.flag = _options.flag;
-    this.pointsPerMs = 100.0 / this.duration;
-    this.pointsFeatureStore = [];
-    this.onPlayFinished = _options.onPlayFinished;
-    this.lineFeatures = [];
-    this.trailStatus = new TrailStatusParam();
-    this.pointsFeatureStore = _options.pointFeatures || {};
-    this.map = _options.map;
-    this._animatePoint = null;
-    $THIS = this;
-};
-
-/**
- * 轨迹渲染
- * @param event
- */
-PlayTrail.prototype.animateTrail = function (event) {
-    const vectorContext = event.vectorContext;
-    const frameState = event.frameState;
-    vectorContext.setStyle($THIS.lineStyle);
-
-    const features = $THIS.lineFeatures;
-    const zoom = $THIS.map.getView().getZoom();
-    // 箭头的高度
-    const unitDistance = 10000 * Math.pow(2, 5 - zoom);
-    const arrowHeight = 5 * unitDistance;
-    let lineLength = 0;
-
-    //轨迹暂停的时候所有播放的轨迹都
-    for (let i = 0; i < features.length; i++) {
-        for (let j = 0; j < features[i].length; j++) {
-            const feature = features[i][j];
-            if ($THIS.trailStatus.getStatus() === TrailStatus.STOPED) {
-                feature.set('start', feature.get('start') + (frameState.time - $THIS.trailStatus.getTime()));
-            }
-        }
-        lineLength += features[i].length;
+export default class Trail {
+    constructor(map, data, eventsHandler) {
+        this.map = map;
+        this.ontrailend = eventsHandler.ontrailend;
+        this.status = null;             // 轨迹播放的状态, 'started':已开始, 'stopped':已暂停, 'finished': 已结束
+        this.data = this.formatData(data);    // 所有的gps数据，二维数组，按terminalId分组  [[gps]]
+        this.lines = [];                // 所有的线，二维数组，按terminalId分组 [[line]]
+        this.duration = 1800;           // 单条线的动画时间
+        this.curveness = 0.1;           // 贝塞尔曲线的弯曲程度，0~1，值越大越弯曲
+        this.startTime = 0;             // 动画开始的时间
+        this.elapsed = 0;               // 动画已执行的时长
+        this.elapsedWhenPaused = 0;     // 暂停时动画已执行的时长
+        this.continuedTime = 0;         // 暂停后，点击继续播放时的时间
+        this.animateFun = (ev) => this.animate(ev);    // 渲染的回调（用箭头函数确保animate中的this指向）
+        this.isPaused = false;          // 是否已暂停
     }
 
-    for (let j = 0; j < features.length; j++) {
-        for (let i = 0; i < features[j].length; i++) {
-            const feature = features[j][i];
-            if (!feature.get('finished')) {
-                if (!feature.get('started')) {
-                    continue;
-                }
-                const coords = feature.getGeometry().getCoordinates();
-                if ($THIS.trailStatus.getStatus() === TrailStatus.STOPED) {
-                    $THIS.trailStatus.setTime(frameState.time);
-                }
+    start() {
+        this.getLines();
+        this.startTime = new Date().getTime();
+        this.map.on('postcompose', this.animateFun);
+        this.map.render();
+        this.status = 'started';
+    }
 
-                const elapsedTime = frameState.time - feature.get('start');
-                const elapsedPoints = elapsedTime * $THIS.pointsPerMs;
+    clear() {
+        this.map.un('postcompose', this.animateFun);
+    }
 
-                const maxIndex = Math.min(elapsedPoints, coords.length);
-                const currentLine = new ol.geom.LineString(coords.slice(0, maxIndex));
-                vectorContext.drawGeometry(currentLine);
+    // 暂停轨迹播放
+    stopTrail() {
+        if (!this.isPaused) {
+            this.elapsedWhenPaused = this.elapsed;
+            this.isPaused = true;
+            this.status = 'stopped';
+        }
+    }
 
-                // 画箭头
-                const endIndex = Math.floor(Math.min(elapsedPoints, coords.length - 1));
-                if (endIndex > 2) {
-                    let mIndex = Math.max(0, endIndex - 1);
-                    mIndex = Math.floor(mIndex);
-                    if (endIndex > mIndex) {
-                        const arrow = utils.getArrow(coords[mIndex], coords[endIndex], arrowHeight);
-                        vectorContext.drawGeometry(arrow);
-                    }
-                }
-                if (elapsedPoints >= coords.length) {
-                    feature.set('finished', true);
-                    globalNum++;
-                    if (feature.secondLine) {
-                        const nextLineFeature = feature.secondLine;
-                        nextLineFeature.set('started', true);
-                        nextLineFeature.set('start', new Date().getTime());
-                    } else {
-                        const targetPoint = feature.get('targetPoint');
-                        targetPoint.trailStatus = TrailStatus.STOPED;
-                        const nextLineFeature = targetPoint.get('line');
-                        if (nextLineFeature) {
-                            nextLineFeature.set('started', true);
-                            nextLineFeature.set('start', new Date().getTime());
-                            const nextPoint = nextLineFeature.get('targetPoint');
-                            nextPoint.trailStatus = TrailStatus.START;
-                            $THIS.animatePoint(nextPoint, $THIS.duration + 500);
-                        } else {
-                            // 轨迹播放结束
-                            if (globalNum >= lineLength) {
-                                // 轨迹播放结束
-                                $THIS.onPlayFinished && $THIS.onPlayFinished({ pointCount: globalNum + 1 });
-                                globalNum = 0;
-                                clearInterval(timer);
-                                timer = null;
-                                $THIS.status = 'finished';
-                                break;
-                            }
-                        }
-                    }
-                }
-            } else {
-                const coors = feature.getGeometry().getCoordinates();
-                vectorContext.drawGeometry(new ol.geom.LineString(coors));
-                // 画箭头
-                const targetPoint = feature.get('targetPoint');
-                // const radius = targetPoint.getStyle().getImage().getRadius();
-                const radius = 7;
-                const distance = radius * unitDistance / 2;
-                const targetCoords = targetPoint.getGeometry().getCoordinates();
-                const halfLen = coors.length / 2;
-                let _index = coors.length - 1;
-                let _line;
-                for (_index = coors.length - 1; _index >= 0; --_index) {
-                    _line = new ol.geom.LineString([coors[_index], targetCoords]);
-                    if (distance < _line.getLength()) {
-                        break;
-                    }
-                }
-                if (_index < halfLen) {
-                    _index = halfLen;
-                }
-                if (feature.secondLine) continue;
-                // 画箭头
-                if (distance < _line.getLength()) {
-                    const rIdx = Math.max(0, _index - 1);
-                    const ratio = distance / _line.getLength();
-                    const arrowHead = [];
-                    arrowHead[0] = targetCoords[0] - (targetCoords[0] - coors[rIdx][0]) * ratio;
-                    arrowHead[1] = targetCoords[1] - (targetCoords[1] - coors[rIdx][1]) * ratio;
-                    const arrow = utils.getArrow(coors[rIdx], arrowHead, arrowHeight);
-                    vectorContext.drawGeometry(arrow);
-                } else {
-                    const arrowIdx = Math.max(0, _index);
-                    const rIdx = Math.max(0, arrowIdx - 1);
-                    if (arrowIdx > rIdx) {
-                        const arrow = utils.getArrow(coors[rIdx], coors[arrowIdx],
-                            arrowHeight);
-                        vectorContext.drawGeometry(arrow);
-                    }
+    // 继续轨迹播放
+    continueTrail() {
+        if (this.isPaused === true) {
+            this.continuedTime = new Date().getTime();
+            this.isPaused = false;
+            this.status = 'started';
+        }
+    }
+
+    // 将gps转换为ol.geom.LineString
+    getLines() {
+        const data = this.data;
+        const lines = [];
+        for(let i = 0, l = data.length; i < l; i++) {
+            const item = data[i];
+            const len = item.length;
+            if (len > 1) {
+                lines[i] = [];
+                for (let j = 0; j < len - 1; j++) {
+                    const start = ol.proj.fromLonLat(item[j]);
+                    const end = ol.proj.fromLonLat(item[j + 1]);
+                    const line = utils.getBezierLine(start, end, this.curveness);
+                    lines[i].push(line);
                 }
             }
         }
+        this.lines = lines;
     }
-    clearInterval(_timer);
-    _timer = setTimeout(function () {
-        $THIS.map.render();
-    }, 20);
-};
 
-/**
- * 使点闪光
- * @param pointFeature 点
- * @param animateDuaration 单次时长
- */
-PlayTrail.prototype.animatePoint = function (pointFeature, animateDuaration) {
-    let start = new Date().getTime();
-    let listenerKey;
-    $THIS.map.un('postcompose', $THIS._animatePoint);
-    $THIS._animatePoint = function (event) {
-        if (pointFeature.trailStatus === TrailStatus.STOPED) {
-            ol.Observable.unByKey(listenerKey);
-            return;
-        }
+    // 开始动画
+    animate(event) {
         const vectorContext = event.vectorContext;
         const frameState = event.frameState;
-        const flashGeom = pointFeature.getGeometry().clone();
-        flashGeom.A = ol.proj.transform(pointFeature.coordinates, 'EPSG:4326', 'EPSG:3857');
-        const elapsed = frameState.time - start;
-        const elapsedRatio = elapsed / animateDuaration;
-        const radius = ol.easing.easeOut(elapsedRatio) * 25 + 3;
-        const opacity = ol.easing.easeOut(1 - elapsedRatio);
+        const zoom = this.map.getView().getZoom();
+        const unitDistance = 10000 * Math.pow(2, 5 - zoom);
+        const arrowHeight = 5 * unitDistance;
+        const lines = this.lines;
+        if (!this.isPaused) {
+            this.elapsed = frameState.time - this.startTime;
+            // 若执行过暂停和继续播放
+            if (this.continuedTime) {
+                this.elapsed = this.elapsedWhenPaused + (frameState.time - this.continuedTime);
+            }
+        }
 
-        const style = new ol.style.Style({
+        vectorContext.setStyle(new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: '#0096ff',
+                width: 2
+            }),
+            fill: new ol.style.Fill({
+                color: '#0096ff'
+            })
+        }));
+        // 渲染所有终端轨迹和箭头(不同终端轨迹会隔2s再播放下一个)
+        for (let i = 0, l = lines.length; i < l; i++) {
+            const terminalLines = lines[i];                            // 终端轨迹的所有线
+            const elapsed = this.elapsed - i * 2000;                   // 该终端的轨迹已经播放的时长（隔2s播放下一个）
+            const lineIdx = Math.floor(elapsed / this.duration);       // 该终端正在播放第几条线
+            const ratio = (elapsed % this.duration) / this.duration;   // 该终端正在播放的线已渲染的比例
+            // 渲染单个终端的所有轨迹线
+            for (let _i = 0, _l = terminalLines.length; _i < _l; _i++) {
+                // 已播放过的线的播放比例为1，正在播放的为ratio, 还未播放的为0
+                const lineRatio = _i > lineIdx ? 0 : (_i === lineIdx ? ratio : 1);
+                if (lineRatio > 0) {
+                    this.drawSingleLineAndArrow(vectorContext, terminalLines[_i], lineRatio, arrowHeight);
+                } else {
+                    break;
+                }
+                // 最后一个终端的最后一条轨迹线若播放完成，则整个轨迹播放完成
+                if ((i === l - 1) && (_i === _l - 1) && (lineRatio === 1)) {
+                    if(this.ontrailend && this.status !== 'finished') {
+                        this.ontrailend();
+                    }
+                    this.status = 'finished';
+                }
+            }
+        }
+        // 渲染闪光点(轨迹暂停时，闪光点不会暂停)
+        for (let i = 0, l = lines.length; i < l; i++) {
+            let ratio;
+            const terminalLines = lines[i];
+            const elapsed = this.elapsed - i * 2000;
+            const lineIdx = Math.floor(elapsed / this.duration);     // 计算轨迹已经到了第几条线，用来确定闪光点的位置
+            ratio = (elapsed % this.duration) / this.duration;       // 计算闪光点已渲染的比例
+            if (this.isPaused) {
+                const _elapsed = event.frameState.time - this.startTime - i * 2000;
+                ratio = (_elapsed % this.duration) / this.duration;  // 即使暂停，闪光点仍然继续执行动画
+            }
+            for (let _i = 0, _l = terminalLines.length; _i < _l; _i++) {
+                if (_i === lineIdx) {
+                    this.drawPoint(vectorContext, terminalLines[_i], ratio);
+                }
+            }
+        }
+        // 触发地图重新渲染
+        this.map.render();
+    }
+
+    // 渲染单条线的轨迹，箭头
+    drawSingleLineAndArrow(vectorContext, line, ratio, arrowHeight) {
+        const coords = line.getCoordinates();
+        const index = Math.floor((coords.length - 1) * ratio);
+
+        // 渲染单条轨迹线
+        const _coords = coords.slice(0, index + 1);
+        const _line = new ol.geom.LineString(_coords);
+        vectorContext.drawGeometry(_line);
+
+        // 渲染单个箭头
+        if (index > 10) {
+            const start = coords[index - 1];
+            const end = coords[index];
+            const arrow = utils.getArrow(start, end, arrowHeight);
+            vectorContext.drawGeometry(arrow);
+        }
+    }
+
+    // 渲染单个闪光点
+    drawPoint(vectorContext, line, ratio) {
+        const coords = line.getCoordinates();
+        const radius = ol.easing.easeOut(ratio) * 25 + 3;
+        const opacity = ol.easing.easeOut(1 - ratio);
+        const cirCleStyle = new ol.style.Style({
             image: new ol.style.Circle({
                 radius: radius,
                 snapToPixel: false,
@@ -241,231 +172,30 @@ PlayTrail.prototype.animatePoint = function (pointFeature, animateDuaration) {
                 })
             })
         });
-        vectorContext.setStyle(style);
-        vectorContext.drawGeometry(flashGeom);
-        if (elapsed > animateDuaration) {
-            if ($THIS.trailStatus.getStatus() === TrailStatus.STOPED) {
-                // 如果是暂停状态则继续动画
-                start = new Date().getTime();
+        vectorContext.setStyle(cirCleStyle);
+        const point = new ol.geom.Point(coords[coords.length - 1]);
+        vectorContext.drawGeometry(point);
+    }
+
+    /**
+     * 格式化data，按terminalId分组，将gps转化为二维数组
+     * @param data {[Object]}
+     * @returns {[[[number,number]]]}
+     */
+    formatData(data) {
+        const trailData = {};
+        for (let i = 0, l = data.length; i < l; i++) {
+            const item = data[i];
+            const gps = item['gps'];
+            const gpsArr = typeof (gps) === 'string' ? JSON.parse(gps) : gps;
+            const terminalId = item['prop_terminalId'];
+            const terminalData = trailData[terminalId];
+            if (!terminalData) {
+                trailData[terminalId] = [gpsArr];
+            } else {
+                terminalData.push(gpsArr);
             }
         }
-    };
-    listenerKey = $THIS.map.on('postcompose', $THIS._animatePoint);
-};
-
-/**
- * 播放轨迹
- */
-PlayTrail.prototype.doPlayTrail = function () {
-    $THIS.status = 'started';
-    const pointStore = $THIS.pointsFeatureStore;
-    for (let k = 0; k < pointStore.length; k++) {
-        if (pointStore[k].length < 2) {
-            pointStore.splice(k, 1);
-            k--;
-        }
+        return Object.values(trailData);
     }
-    if (pointStore.length === 0) return;
-    for (let k = 0; k < pointStore.length; k++) {
-        // 初始点
-        let startPoint = pointStore[k][0].coordinates,
-            endPoint;
-        if (pointStore[k].length > 1) {
-            const _lines = [];
-            for (let i = 1; i < pointStore[k].length; i++) {
-                endPoint = pointStore[k][i].coordinates;
-                const arcGenerator = new arc.GreatCircle(
-                    {x: startPoint[0], y: startPoint[1]},
-                    {x: endPoint[0], y: endPoint[1]}
-                );
-                // 把点往后移z
-                startPoint = endPoint;
-
-                const arcLine = arcGenerator.Arc(100, {
-                    offset: 20
-                });
-                arcLine.geometries.forEach(function (geometry, _idx) {
-                    const line = new ol.geom.LineString(geometry.coords);
-                    line.transform(ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
-                    const lineFeature = new ol.Feature({
-                        geometry: line,
-                        finished: false,
-                        started: false,
-                        targetPoint: pointStore[k][i]
-                    });
-                    if (_idx == 0) {
-                        if ('move' == $THIS.flag) {
-                            if (i == 1) {
-                                lineFeature.set('start', new Date().getTime());
-                                lineFeature.set('started', true);
-                                pointStore[k][i].trailStatus = TrailStatus.START;
-                                $THIS.animatePoint(pointStore[k][i],
-                                    $THIS.duration);
-                            }
-                        } else {
-                            if (i == 1 && k == 0) {
-                                lineFeature.set('start', new Date().getTime());
-                                lineFeature.set('started', true);
-                                pointStore[k][i].trailStatus = TrailStatus.START;
-                                $THIS.animatePoint(pointStore[k][i],
-                                    $THIS.duration);
-                            }
-                        }
-                        pointStore[k][i - 1].set('line', lineFeature);
-                    } else if (_idx == 1) {
-                        _lines[_lines.length - 1].secondLine = lineFeature;
-                    }
-                    _lines.push(lineFeature);
-                });
-            }
-            $THIS.lineFeatures.push(_lines);
-        }
-    }
-    $THIS.map.on('postcompose', $THIS.animateTrail);
-    $THIS.map.render();
-
-    // 多个轨迹时逐个播放
-    GLOBAL.NUM = 1;
-    if (timer === null) {
-        timer = setInterval(function () {
-            if (GLOBAL.NUM <= $THIS.lineFeatures.length - 1) {
-                if (GLOBAL.NUM <= $THIS.lineFeatures.length - 1) {
-                    if ($THIS.lineFeatures[GLOBAL.NUM].length > 0) {
-                        const feature = $THIS.lineFeatures[GLOBAL.NUM][0];
-                        feature.set('start', new Date().getTime());
-                        feature.set('started', true);
-                    }
-                    GLOBAL.NUM += 1;
-                }
-            }
-        }, 2000);
-    }
-};
-
-/**
- * 清除播放轨迹
- */
-PlayTrail.prototype.cleanTrailLines = function (num) {
-    const pointLength = $THIS.pointsFeatureStore.length;
-    $THIS.trailStatus.setStatus(TrailStatus.START);
-    let length = 0;
-    for (let i = pointLength - num; i < pointLength; i++) {
-        $THIS.pointsFeatureStore[i].trailStatus = TrailStatus.STOPED;
-        length += $THIS.pointsFeatureStore[i].length - 1;
-    }
-    $THIS.lineFeatures.splice(length, $THIS.lineFeatures.length);
-    $THIS.map.un('postcompose', $THIS.animateTrail);
-    $THIS.map.un('postcompose', $THIS._animatePoint);
-    $THIS.status = null;
-};
-
-/**
- * 暂停播放
- */
-PlayTrail.prototype.stopTrail = function () {
-    clearInterval(timer);
-    if ($THIS.trailStatus.getStatus() !== TrailStatus.STOPED) {
-        $THIS.trailStatus.setStatus(TrailStatus.STOPED);
-        $THIS.trailStatus.setTime(new Date().getTime());
-    }
-    $THIS.status = 'stopped';
-};
-
-/**
- * 继续播放
- */
-PlayTrail.prototype.continueTrail = function () {
-    $THIS.trailStatus.setStatus(TrailStatus.START);
-    timer = setInterval(function () {
-        if (GLOBAL.NUM <= $THIS.lineFeatures.length - 1) {
-            if ($THIS.lineFeatures[GLOBAL.NUM].length > 0) {
-                const feature = $THIS.lineFeatures[GLOBAL.NUM][0];
-                feature.set('start', new Date().getTime());
-                feature.set('started', true);
-            }
-            GLOBAL.NUM += 1;
-        }
-    }, 2000);
-    $THIS.status = 'started';
-};
-
-/**
- * 回放
- */
-PlayTrail.prototype.backTrail = function (time) {
-    const backTime = GLOBAL.MAX_TIME - parseInt(time);
-    for (let i = 0; i < $THIS.lineFeatures.length; i++) {
-        if ($THIS.lineFeatures[i].T.start > backTime) {
-            GLOBAL.BACK_LIST.push($THIS.lineFeatures[i]);
-            $THIS.lineFeatures.splice(i, 1);
-            i--;
-        }
-    }
-    $THIS.trailStatus.setStatus(TrailStatus.STOPED);
-    $THIS.trailStatus.setTime(new Date().getTime());
-};
-
-/**z
- * 回放
- */
-PlayTrail.prototype.runTrail = function (time) {
-    const backTime = GLOBAL.MIN_TIME - parseInt(time);
-    for (let i = 0; i < GLOBAL.BACK_LIST.length; i++) {
-        if (GLOBAL.BACK_LIST[i].T.start < backTime) {
-            $THIS.lineFeatures.push(GLOBAL.BACK_LIST[i]);
-        }
-    }
-    $THIS.trailStatus.setStatus(TrailStatus.STOPED);
-    $THIS.trailStatus.setTime(new Date().getTime());
-};
-
-/**
- * 格式化后台数据
- * @param data 轨迹播放后台数据
- */
-const formatData = (data) => {
-    const terminalArr = [];
-    const trailData = [];
-    const format = new ol.format.GeoJSON();
-    for (let i = 0, len = data.length; i < len; i++) {
-        const terminalId = data[i].prop_terminalId;
-        let terminalIndex = terminalArr.indexOf(terminalId);
-        if (terminalIndex < 0) {
-            terminalArr.push(terminalId);
-            terminalIndex = terminalArr.length - 1;
-            trailData[terminalIndex] = [];
-        }
-        let gps = data[i].gps;
-        gps = typeof (gps) === 'string' ? JSON.parse(gps) : gps;
-        const point = format.readFeature({
-            coordinates: gps,
-            type: 'Point'
-        }, {
-            featureProjection: 'EPSG:3857'
-        });
-        point.type = 'point';
-        point.trailStatus = TrailStatus.STOPED;
-        point.coordinates = gps;
-        point.coordinate = ol.proj.fromLonLat(gps);
-
-        trailData[terminalIndex].push(point);
-    }
-    return trailData;
-};
-
-/**
- * 创建 trail 对象
- * @param map
- * @param data
- * @param eventsHandler
- * @returns {PlayTrail}
- */
-export default (map, data, eventsHandler) => {
-    return new PlayTrail({
-        pointFeatures: formatData(data),
-        map: map,
-        duration: 1000,
-        flag: 'init',
-        onPlayFinished: eventsHandler.ontrailend
-    });
 }

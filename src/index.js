@@ -2,7 +2,7 @@ import getMap from './view/renderMap';
 import getHeatLayer from './view/heatLayer';
 import getDraw from './action/draw';
 import getPointLayer from './view/pointLayer';
-import getTrail from './action/trail';
+import Trail from './action/trail';
 import getPointModalOverlay from './view/pointModal';
 import getAreaLayer from './view/areaLayer';
 import EffectLine from './action/effectLine';
@@ -27,7 +27,8 @@ class OlMap {
             draw: {},                // 画区相关配置项
             pointModal: {            // 点详情框的配置项
                 autoClose: 'zoom'
-            }
+            },
+            effectLine: {}
         };
         this.heatLayer = null;       // 热力图层
         this.pointLayer = null;      // 点图层
@@ -47,7 +48,7 @@ class OlMap {
             this.map.on('moveend', (ev) => this.events.dragAndMove(ev, this.pointModal));
             this.map.addInteraction(this.events.getSelectInteraction());
         }
-        this.trail && this.trail.cleanTrailLines();
+        this.trail && this.trail.clear();
         this.trail = null;
     }
 
@@ -66,7 +67,7 @@ class OlMap {
     removeAllFeature() {
         this.map.removeLayer(this.heatLayer);
         this.map.removeLayer(this.pointLayer);
-        this.trail && this.trail.cleanTrailLines();
+        this.trail && this.trail.clear();
         this.effectLine && this.effectLine.clear();
     }
 
@@ -112,10 +113,10 @@ class OlMap {
      */
     startTrail() {
         if (this.trail) {
-            this.trail.cleanTrailLines();
+            this.trail.clear();
         }
-        this.trail = this.trail || getTrail(this.map, this.options.data, this.eventsHandler);
-        this.trail.doPlayTrail();
+        this.trail = new Trail(this.map, this.options.data, this.eventsHandler);
+        this.trail.start();
         if (this.heatLayer) {
             this.map.removeLayer(this.heatLayer);
             this.map.removeLayer(this.pointLayer);

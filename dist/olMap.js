@@ -63,7 +63,7 @@
 /******/
 /******/ 	var hotApplyOnUpdate = true;
 /******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	var hotCurrentHash = "e9747190ba3563e90d83";
+/******/ 	var hotCurrentHash = "6bce5f441a9077082556";
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule;
@@ -2577,6 +2577,7 @@ var ol_default = /*#__PURE__*/__webpack_require__.n(ol);
  * @returns {ol.Map}
  */
 const getMap = (domId, opts) => {
+    // 后台提供 geo server
     const wmsLayer = new ol_default.a.layer.Tile({
         visiable: true,
         source: new ol_default.a.source.TileWMS({
@@ -2590,6 +2591,7 @@ const getMap = (domId, opts) => {
             }
         })
     });
+    // 在线OSM
     const osmLayer = new ol_default.a.layer.Tile({
         source: new ol_default.a.source.OSM({wrapX: false})
     });
@@ -2678,1429 +2680,6 @@ var sms_attention_default = /*#__PURE__*/__webpack_require__.n(sms_attention);
 var circle = __webpack_require__(2);
 var circle_default = /*#__PURE__*/__webpack_require__.n(circle);
 
-// CONCATENATED MODULE: ./src/common/utils.js
-
-
-
-
-
-
-
-
-
-
-/**
- * 公共方法
- */
-const utils = {
-    isBigScreen: false,
-    styleFunction: (feature, isHover) => {
-        const name = feature.get('name');
-        switch (name) {
-            case 'point':
-                const count = feature.get('aggreCount'),
-                    type = feature.get('type'),
-                    type_ope = feature.get('type_ope');
-                if (count > 1) {
-                    return utils.getJuheIconStyle(count, isHover);
-                } else {
-                    return utils.getSingleIconStyle(type, type_ope, isHover);
-                }
-                break;
-            case 'line':
-                return utils.getLineStyle(feature.get('label'), isHover);
-                break;
-        }
-    },
-    /**
-     * 聚合点样式
-     * len 聚合个数
-     * isHover
-     */
-    getJuheIconStyle: (len, isHover) => {
-        return new ol_default.a.style.Style({
-            image: new ol_default.a.style.Icon(({
-                color: isHover ? '#3da6f5' : '#F54336',
-                src: juhe_default.a,
-                anchor: [0.5, 1]
-            })),
-            text: new ol_default.a.style.Text({
-                text: len && len.toString(),
-                fill: new ol_default.a.style.Fill({
-                    color: '#fff'
-                }),
-                offsetY: -16,
-                scale: 0.9
-            })
-        });
-    },
-
-    /**
-     * 单点样式
-     * type: cr听音 sms短信 lu位置
-     * opType: unOperate未操作 operated已操作 attention预警  today 24小时
-     * isHover
-     */
-    getSingleIconStyle: (type, opType, isHover) => {
-        let src,
-            color = '#f00',
-            isAttention = opType === 'attention';
-        if (isHover) {
-            color = '#0096ff';
-        } else if (opType === 'operated') {
-            color = '#9fa2bd';
-        } else if (opType === 'unOperate') {
-            color = '#3db94c';
-        } else if (opType === 'attention') {
-            color = '#f00';
-        }
-
-        if (type === 'cr') {
-            src = isAttention ? cr_attention_default.a : cr_default.a;
-        } else if (type === 'lu') {
-            src = isAttention ? lu_attention_default.a : lu_default.a;
-        } else if (type === 'sms') {
-            src = isAttention ? sms_attention_default.a : sms_default.a;
-        }
-
-        if (opType.indexOf('today') > -1 || !type || !opType) {
-            return new ol_default.a.style.Style({
-                image: new ol_default.a.style.Icon(({
-                    color: color,
-                    src: circle_default.a,
-                    anchor: [0.5, 0.5]
-                }))
-            })
-        } else {
-            return new ol_default.a.style.Style({
-                image: new ol_default.a.style.Icon(({
-                    color: color,
-                    src: src,
-                    anchor: [0.5, 1]
-                }))
-            })
-        }
-    },
-
-    getCircleStyle: (label) => {
-        return new ol_default.a.style.Style({
-            image: new ol_default.a.style.Icon(({
-                color: '#3db94c',
-                src: circle_default.a,
-                anchor: [0.5, 0.5]
-            })),
-            text: new ol_default.a.style.Text({
-                text: label,
-                fill: new ol_default.a.style.Fill({
-                    color: '#3db94c'
-                }),
-                offsetY: 14
-            })
-        })
-    },
-
-    /**
-     * 区域样式
-     * @param type
-     * @param isHover
-     */
-    getAreaStyle: (type, isHover) => {
-        const isBigscreen = type && type.toLowerCase() === 'bigscreen';
-        return new ol_default.a.style.Style({
-            stroke: new ol_default.a.style.Stroke({
-                color: isBigscreen ? '#EF8F8F' : '#00B7EE',
-                width: isBigscreen && !isHover ? 1 : 2,
-                lineDash: isBigscreen ? [10, 10] : [0, 0]
-            }),
-            fill: new ol_default.a.style.Fill({
-                color: isHover ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0)'
-            })
-        })
-    },
-
-    /**
-     * 线样式
-     * @param text
-     * @param isHover
-     */
-    getLineStyle: (text, isHover) => {
-        return new ol_default.a.style.Style({
-            text: new ol_default.a.style.Text({
-                text: text,
-                font: '16px arial,sans-serif',
-                padding: [10, 10, 10, 10],
-                stroke: new ol_default.a.style.Stroke({   // 不加半透明stroke的话，点击文字背景不会选中
-                    color: 'rgba(255,255,255,.1)',
-                    width: 8
-                }),
-                fill: new ol_default.a.style.Fill({
-                    color: isHover ? '#0096ff' : '#3db94c'
-                }),
-                placement: 'line',
-                textBaseline: 'bottom',
-                offsetY: -2
-            }),
-            stroke: new ol_default.a.style.Stroke({
-                color: isHover ? '#0096ff' : '#3db94c',
-                width: 1
-            })
-        });
-    },
-
-    /**
-     * arrow style
-     * @param isHover
-     */
-    getArrowStyle: (isHover) => {
-        return new ol_default.a.style.Style({
-            stroke: new ol_default.a.style.Stroke({
-                color: isHover ? '#0096ff' : '#3db94c',
-                width: 2
-            }),
-            fill: new ol_default.a.style.Fill({
-                color: isHover ? '#0096ff' : '#3db94c'
-            })
-        });
-    },
-
-    /**
-     * 获取当前地图视口左上角和右下角的坐标
-     * @param map
-     */
-    getViewGps: (map) => {
-        let extent = map.getView().calculateExtent(map.getSize()),
-            //上左的坐标
-            getTopLeft = ol_default.a.proj.transform(ol_default.a.extent.getTopLeft(extent), 'EPSG:3857', 'EPSG:4326'),
-            //下右的坐标
-            getBottomRight = ol_default.a.proj.transform(ol_default.a.extent.getBottomRight(extent), 'EPSG:3857', 'EPSG:4326');
-        return [getTopLeft, getBottomRight];
-    },
-
-    /**
-     * 格式化区域的data
-     * @param data
-     */
-    formatAreaData: (data) => {
-        return data.map(item => {
-            if (item.areaType === '2' || item.areaType === 2) {
-                let center = item.center.split(',').map(str => parseFloat(str));
-                center = ol_default.a.proj.fromLonLat(center);
-                const location = {
-                    center: center,
-                    radius: item.radius * 1000
-                };
-                return Object.assign({}, item, {areaLocation: location});
-            } else {
-                const gpsList = item.areaLocation.split(',').map(str => parseFloat(str));
-                const location = utils.getCoordinates(gpsList).map(d => ol_default.a.proj.fromLonLat(d));
-                return Object.assign({}, item, {areaLocation: location});
-            }
-        })
-    },
-
-    /**
-     * 将坐标集合格式从 number[] 转换为 [number, number][]
-     * @param data  坐标集合  number[]
-     * @returns {Array}
-     */
-    getCoordinates: (data) => {
-        let coordinates = [];
-        let len = data.length;
-        // 矩形区域有时在项目中保存的只有左上角和右下角的坐标，兼容性考虑
-        if (len === 4) {
-            const [x1, y1, x2, y2] = data;
-            coordinates = [[x1, y1], [x1, y2], [x2, y2], [x2, y1], [x1, y1]];
-        } else {
-            // 如果 data 中的坐标数据不是闭合的（终点不等于起点）, 将其闭合
-            if (data[0] !== data[len - 2] || data[1] !== data[len - 1]) {
-                data.push(data[0]);
-                data.push(data[1]);
-                len = data.length;
-            }
-            for (let i = 0; i < len / 2; i++) {
-                coordinates[i] = [data[i * 2], data[i * 2 + 1]]
-            }
-        }
-
-        return coordinates;
-    },
-
-    /**
-     * coordinate转换为经纬度，经度可以大于180或小于-180 （toLonLat 会把不合法的经纬度换成合法的，画区超过地图边界时需要不合法坐标）
-     * @param coordinate
-     */
-    toGps: (coordinate) => {
-        let gps = ol_default.a.proj.toLonLat(coordinate);
-        if (coordinate[0] > 20037508.342789244) {
-            gps[0] = gps[0] + 360;
-        } else if (coordinate[0] < -20037508.342789244) {
-            gps[0] = gps[0] - 360;
-        }
-        return gps;
-    },
-
-    /**
-     * 获取地图中心点坐标，经纬度坐标或者投影坐标
-     * @param map
-     * @param type 'coordinate' 或 不填
-     * @returns {ol.Coordinate}
-     */
-    getCenter: (map, type) => {
-        const center = map.getView().getCenter();
-        if (type === 'coordinate') {
-            return center;
-        } else {
-            return ol_default.a.proj.toLonLat(center);
-        }
-    },
-
-    /**
-     * 设置地图中心点
-     * @param map
-     * @param gps
-     */
-    setCenter: (map, gps) => {
-        const center = ol_default.a.proj.fromLonLat([parseFloat(gps[0]), parseFloat(gps[1])]);
-        map.getView().setCenter(center);
-    },
-
-    /**
-     * 生成箭头
-     * @param rPoint 参照节点的位置（用于确定箭头的方向）
-     * @param endPoint 箭头的头的位置
-     * @param arrowHeight 箭头的高度
-     * @returns {ol.geom.Polygon}
-     */
-    getArrow: (rPoint, endPoint, arrowHeight) => {
-        //箭头底和高的交点位置
-        const mPoint = [];
-        //头与交点的位移差
-        let diffX, diffY;
-        //头与参照点的位移差
-        let rdiffX, rdiffY;
-
-        rdiffX = endPoint[0] - rPoint[0];
-        rdiffY = endPoint[1] - rPoint[1];
-        //头与参照点的距离
-        const rlength = Math.sqrt(rdiffX * rdiffX + rdiffY * rdiffY);
-        //头与交点的位移差
-        diffX = rdiffX * arrowHeight / rlength;
-        diffY = rdiffY * arrowHeight / rlength;
-
-        mPoint[0] = endPoint[0] - diffX;
-        mPoint[1] = endPoint[1] - diffY;
-        // 三角形箭头的底的一半长度
-        const halfBottomLen = arrowHeight / 3;
-        // 箭头的另外两个顶点
-        const point1 = [],
-            point2 = [];
-        const _x = halfBottomLen * Math.abs(diffY / arrowHeight);
-        const _y = halfBottomLen * Math.abs(diffX / arrowHeight);
-        if (diffY === 0) {
-            point1[0] = mPoint[0];
-            point1[1] = mPoint[1] - halfBottomLen;
-
-            point2[0] = mPoint[0];
-            point2[1] = mPoint[1] + halfBottomLen;
-        } else if (diffX === 0) {
-            point1[0] = mPoint[0] - halfBottomLen;
-            point1[1] = mPoint[1];
-
-            point2[0] = mPoint[0] + halfBottomLen;
-            point2[1] = mPoint[1];
-        } else if (diffX > 0 && diffY > 0 || diffX < 0 && diffY < 0) {
-            point1[0] = mPoint[0] + _x;
-            point1[1] = mPoint[1] - _y;
-
-            point2[0] = mPoint[0] - _x;
-            point2[1] = mPoint[1] + _y;
-        } else if (diffX < 0 && diffY > 0 || diffX > 0 && diffY < 0) {
-            point1[0] = mPoint[0] - _x;
-            point1[1] = mPoint[1] - _y;
-
-            point2[0] = mPoint[0] + _x;
-            point2[1] = mPoint[1] + _y;
-        }
-        return new ol_default.a.geom.Polygon([
-            [endPoint, point1, point2, endPoint]
-        ]);
-    }
-};
-/* harmony default export */ var common_utils = (utils);
-// CONCATENATED MODULE: ./src/view/areaLayer.js
-
-
-
-/**
- * 创建 area 右上角的按钮 overlay
- * @param position  [[number,number],[number,number]]
- * @param index  string
- * @param showCancelBtn   boolean
- * @param showSearchBtn   boolean
- * @returns {ol.Overlay}
- */
-const getBtnOverlay = (position, index, showCancelBtn, showSearchBtn) => {
-    const div = document.createElement('div');
-    div.innerHTML =
-        `<span id="${index}" class="overlay-btn-ct">
-            <span class="overlay-btn overlay-cancel ${!!showCancelBtn}"  data-id="${index}">X</span>
-            <span class="overlay-btn overlay-search ${!!showSearchBtn}"  data-id="${index}">⊙</span>
-        </span>`;
-    document.body.appendChild(div);
-
-    return new ol_default.a.Overlay({
-        position: position,
-        element: document.getElementById(index),
-        autoPan: true,
-        positioning: 'top-left',
-        offset: [0, -3],
-        stopEvent: false
-    });
-};
-
-const getInfoOverlay = (pos, index, areaData, overlayType) => {
-    let type = overlayType || '';
-    type = type.toLowerCase() === 'bigscreen' ? 'bigscreen' : 'normal';
-    const div = document.createElement('div');
-    div.innerHTML =
-        `<div id="${index}" class="ol-${type}-tooltip">
-            <div style="margin-top: 10px">Title:  ${areaData.areaName}</div>
-            <div style="margin-top: 10px">Description:  ${areaData.areaDetail}</div>
-        </div>`;
-    document.body.appendChild(div);
-
-    return new ol_default.a.Overlay({
-        position: pos,
-        element: document.getElementById(index),
-        autoPan: false,
-        positioning: 'top-left',
-        offset: [0, -3],
-        stopEvent: false
-    });
-};
-
-/**
- * 获取圆形layer
- * @param options
- * @param geometryData
- * @param index
- * @param areaData
- * @returns {ol.layer.Vector}
- */
-const getCircleLayer = (options, geometryData, index, areaData) => {
-    let dataOverlay;
-    const feature = new ol_default.a.Feature({
-        name: 'area',
-        geometry: new ol_default.a.geom.Circle(geometryData.center, geometryData.radius)
-    });
-    const source = new ol_default.a.source.Vector({
-        features: [feature],
-        wrapX: false
-    });
-    const areaLayer = new ol_default.a.layer.Vector({
-        id: index,
-        source: source,
-        style: function () {
-            return common_utils.getAreaStyle(options.area.type);
-        }
-    });
-    if (areaData) {
-        dataOverlay = getInfoOverlay(geometryData.center, index, areaData, options.area.type);
-        dataOverlay.setOffset([15, 15]);
-        dataOverlay.targetFeature = feature;
-    }
-    areaLayer.dataOverlay = feature.dataOverlay = dataOverlay;
-    return areaLayer;
-};
-
-/**
- * 获取多边形layer (包括矩形)
- * @param options
- * @param geometryData  顶点坐标的集合  number[]
- * @param index
- * @param areaData  可选
- * @returns {ol.layer.Vector}
- */
-const getLinesLayer = (options, geometryData, index, areaData) => {
-    let btnOverlay, dataOverlay;
-    const topRight = geometryData[3] || geometryData[0];
-    const areaOption = options.area;
-
-    const geojsonObject = {
-        'type': 'FeatureCollection',
-        'crs': { 'type': 'name', 'properties': { 'name': 'EPSG:3857' } },
-        'features': [{
-            'type': 'Feature',
-            'geometry': {
-                'type': 'Polygon',
-                'coordinates': [geometryData]
-            }
-        }]
-    };
-    const features = (new ol_default.a.format.GeoJSON()).readFeatures(geojsonObject);
-    features.forEach(feature => feature.set('name', 'area'));
-    const vectorSource = new ol_default.a.source.Vector({
-        features: features,
-        wrapX: false
-    });
-
-    // 若显示取消和搜索按钮，添加overlay
-    if (areaOption.showCancelBtn || areaOption.showSearchBtn) {
-        btnOverlay = getBtnOverlay(topRight, index, areaOption.showCancelBtn, areaOption.showSearchBtn);
-    }
-    // 若hover时显示详情框，添加overlay
-    if (areaData) {
-        dataOverlay = getInfoOverlay(topRight, index, areaData, areaOption.type);
-        dataOverlay.setOffset([15, 15]);
-        dataOverlay.targetFeature = features[0];
-    }
-
-    const areaLayer = new ol_default.a.layer.Vector({
-        id: index,
-        source: vectorSource,
-        style: function () {
-            return common_utils.getAreaStyle(areaOption.type);
-        }
-    });
-
-    areaLayer.dataOverlay = features[0].dataOverlay = dataOverlay;
-    areaLayer.btnOverlay = btnOverlay;
-    return areaLayer;
-};
-
-/**
- * 创建选区图层
- * @param options
- * @param geometryData  图形数据
- * @param index    string
- * @param areaData object  可选(手动画区后的展示不传此项)
- * @returns {ol.layer.Vector}
- */
-const getAreaLayer = (options, geometryData, index, areaData) => {
-    let layer;
-    // 圆形
-    if (geometryData.radius) {
-        layer = getCircleLayer(options, geometryData, index, areaData);
-        layer.featureType = 'circle';
-    } else {
-        layer = getLinesLayer(options, geometryData, index, areaData);
-        layer.featureType = 'polygon';
-    }
-    return layer;
-};
-/* harmony default export */ var view_areaLayer = (getAreaLayer);
-// CONCATENATED MODULE: ./src/action/draw.js
-
-
-
-
-let draw_areaLayer,
-    drawNum = 0;
-
-/**
- * 创建矩形 draw 时需要定义geometryFunction
- * @param coordinates
- * @param geometry
- * @returns {*}
- */
-function geometryFunction(coordinates, geometry) {
-    if (!geometry) {
-        geometry = new ol_default.a.geom.Polygon(null);
-    }
-    let minX = Math.min(coordinates[0][0], coordinates[1][0]),
-        maxX = Math.max(coordinates[0][0], coordinates[1][0]),
-        minY = Math.min(coordinates[0][1], coordinates[1][1]),
-        maxY = Math.max(coordinates[0][1], coordinates[1][1]);
-    // 设置左上角为第一个点
-    geometry.setCoordinates([
-        [[minX, maxY], [minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY]]
-    ]);
-    return geometry;
-}
-
-/**
- * 获取 draw 出的图形的顶点坐标集合
- * @param feature
- * @returns [] | {}
- */
-function getGeomData(feature) {
-    const geometry = feature.getGeometry();
-    // 圆形
-    if (geometry.getType() === 'Circle') {
-        const center = geometry.getCenter(),
-            radius = geometry.getRadius();
-        return { center: center, radius: radius };
-    } else {
-        return geometry.getCoordinates()[0];
-    }
-}
-
-/**
- * 创建 Draw 对象
- * @param type
- * @param options
- * @param map
- * @param eventsHandler
- * @returns {ol.interaction.Draw}
- */
-const getDraw = (type, options, map, eventsHandler) => {
-    const drawOption = options.draw;
-    let draw;
-
-    if (!drawOption.showMultiArea && draw_areaLayer) {
-        map.removeLayer(draw_areaLayer);
-        draw_areaLayer.btnOverlay && map.removeOverlay(draw_areaLayer.btnOverlay);
-    }
-
-    switch (type) {
-    case 'circle':
-        draw = new ol_default.a.interaction.Draw({ type: 'Circle' });
-        break;
-    case 'polygon':
-        draw = new ol_default.a.interaction.Draw({ type: 'Polygon' });
-        break;
-    default:
-        draw = new ol_default.a.interaction.Draw({
-            type: ('LineString'),
-            geometryFunction: geometryFunction,
-            maxPoints: 2
-        });
-        break;
-    }
-    draw.type = type;
-
-    draw.on('drawstart', () => {
-        eventsHandler.ondrawstart();
-    });
-    draw.on('drawend', (ev) => {
-        let emitData;         // ondrawend 事件的参数
-        const geometryData = getGeomData(ev.feature);     // 图形的数据
-        draw.isDrawing = false;
-        map.removeInteraction(draw);
-
-        if (type === 'box') {
-            // 左上角和右下角坐标
-            emitData = [common_utils.toGps(geometryData[0]), common_utils.toGps(geometryData[2])];
-        } else if (type === 'circle') {
-            // 中心点和半径（单位千米）
-            emitData = {
-                center: common_utils.toGps(geometryData.center),
-                radius: geometryData.radius / 1000
-            }
-        } else {
-            // 所有坐标
-            emitData = geometryData.map(coordinate => common_utils.toGps(coordinate));
-        }
-
-        eventsHandler.ondrawend(emitData);
-
-        // 框选完成后是否显示选框
-        if (drawOption.showArea) {
-            draw_areaLayer = view_areaLayer(options, geometryData, 'draw' + drawNum);
-            draw_areaLayer.gpsData = emitData;
-            map.addLayer(draw_areaLayer);
-            if (draw_areaLayer.btnOverlay) {
-                map.addOverlay(draw_areaLayer.btnOverlay);
-            }
-            drawNum++;
-        }
-    });
-    return draw;
-};
-/* harmony default export */ var action_draw = (getDraw);
-// CONCATENATED MODULE: ./src/view/pointLayer.js
-
-
-/**
- * 点图层
- * @param options
- * @returns {ol.layer.Vector}
- */
-const getPointLayer = (options) => {
-    const pointFeatures = [];
-    const data = options.data;
-    const len = data.length;
-    for (let i = 0; i < len; i++) {
-        const item = data[i];
-        let GPS = (item.aggreCount > 1 || !item.gps) ? item.gpsPosition : item.gps;
-        GPS = typeof(GPS) === 'string' ? JSON.parse(GPS) : GPS;
-        if (GPS[0] < -180 || GPS[0] > 180 || GPS[1] < -90 || GPS[1] > 90) {
-            continue;
-        }
-        const feature = new ol_default.a.Feature({
-            name: 'point',
-            id: item.prop_crId || item.id, // 话单id
-            aggreGPS: GPS, //原始的坐标
-            aggreCount: item.aggreCount,
-            type: item.prop_dataType,
-            type_ope: item.type,
-            pointGPS: ol_default.a.proj.fromLonLat(GPS),
-            geometry: new ol_default.a.geom.Point(ol_default.a.proj.fromLonLat(GPS))
-        });
-        feature.setStyle(common_utils.styleFunction(feature));
-        pointFeatures.push(feature);
-    }
-
-    const source = new ol_default.a.source.Vector({
-        features: pointFeatures,
-        wrapX: false
-    });
-
-    return new ol_default.a.layer.Vector({
-        source: source,
-        wrapX: false,
-        zIndex: 9
-    });
-};
-
-/* harmony default export */ var pointLayer = (getPointLayer);
-// CONCATENATED MODULE: ./src/action/arc.js
-/**
- * v0.1.0
- */
-
-
-
-var D2R = Math.PI / 180;
-var R2D = 180 / Math.PI;
-
-var Coord = function (lon, lat) {
-    this.lon = lon;
-    this.lat = lat;
-    this.x = D2R * lon;
-    this.y = D2R * lat;
-};
-
-Coord.prototype.view = function () {
-    return String(this.lon).slice(0, 4) + ',' + String(this.lat).slice(0, 4);
-};
-
-Coord.prototype.antipode = function () {
-    var anti_lat = -1 * this.lat;
-    var anti_lon = (this.lon < 0) ? 180 + this.lon : (180 - this.lon) * -1;
-    return new Coord(anti_lon, anti_lat);
-};
-
-var LineString = function () {
-    this.coords = [];
-    this.length = 0;
-};
-
-LineString.prototype.move_to = function (coord) {
-    this.length++;
-    this.coords.push(coord);
-};
-
-var Arc = function (properties) {
-    this.properties = properties || {};
-    this.geometries = [];
-};
-
-Arc.prototype.json = function () {
-    if (this.geometries.length <= 0) {
-        return {
-            'geometry': {'type': 'LineString', 'coordinates': null},
-            'type': 'Feature', 'properties': this.properties
-        };
-    } else if (this.geometries.length == 1) {
-        return {
-            'geometry': {'type': 'LineString', 'coordinates': this.geometries[0].coords},
-            'type': 'Feature', 'properties': this.properties
-        };
-    } else {
-        var multiline = [];
-        for (var i = 0; i < this.geometries.length; i++) {
-            multiline.push(this.geometries[i].coords);
-        }
-        return {
-            'geometry': {'type': 'MultiLineString', 'coordinates': multiline},
-            'type': 'Feature', 'properties': this.properties
-        };
-    }
-};
-
-// TODO - output proper multilinestring
-Arc.prototype.wkt = function () {
-    var wkt_string = '';
-    var wkt = 'LINESTRING(';
-    var collect = function (c) {
-        wkt += c[0] + ' ' + c[1] + ',';
-    };
-    for (var i = 0; i < this.geometries.length; i++) {
-        if (this.geometries[i].coords.length === 0) {
-            return 'LINESTRING(empty)';
-        } else {
-            var coords = this.geometries[i].coords;
-            coords.forEach(collect);
-            wkt_string += wkt.substring(0, wkt.length - 1) + ')';
-        }
-    }
-    return wkt_string;
-};
-
-/*
- * http://en.wikipedia.org/wiki/Great-circle_distance
- *
- */
-var GreatCircle = function (start, end, properties) {
-    if (!start || start.x === undefined || start.y === undefined) {
-        throw new Error("GreatCircle constructor expects two args: start and end objects with x and y properties");
-    }
-    if (!end || end.x === undefined || end.y === undefined) {
-        throw new Error("GreatCircle constructor expects two args: start and end objects with x and y properties");
-    }
-    this.start = new Coord(start.x, start.y);
-    this.end = new Coord(end.x, end.y);
-    this.properties = properties || {};
-
-    var w = this.start.x - this.end.x;
-    var h = this.start.y - this.end.y;
-    var z = Math.pow(Math.sin(h / 2.0), 2) +
-        Math.cos(this.start.y) *
-        Math.cos(this.end.y) *
-        Math.pow(Math.sin(w / 2.0), 2);
-    this.g = 2.0 * Math.asin(Math.sqrt(z));
-
-    if (this.g == Math.PI) {
-        throw new Error('it appears ' + start.view() + ' and ' + end.view() + " are 'antipodal', e.g diametrically opposite, thus there is no single route but rather infinite");
-    } else if (isNaN(this.g)) {
-        throw new Error('could not calculate great circle between ' + start + ' and ' + end);
-    }
-};
-
-/*
- * http://williams.best.vwh.net/avform.htm#Intermediate
- */
-GreatCircle.prototype.interpolate = function (f) {
-    var A = Math.sin((1 - f) * this.g) / Math.sin(this.g);
-    var B = Math.sin(f * this.g) / Math.sin(this.g);
-    var x = A * Math.cos(this.start.y) * Math.cos(this.start.x) + B * Math.cos(this.end.y) * Math.cos(this.end.x);
-    var y = A * Math.cos(this.start.y) * Math.sin(this.start.x) + B * Math.cos(this.end.y) * Math.sin(this.end.x);
-    var z = A * Math.sin(this.start.y) + B * Math.sin(this.end.y);
-    var lat = R2D * Math.atan2(z, Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)));
-    var lon = R2D * Math.atan2(y, x);
-    return [lon, lat];
-};
-
-
-/*
- * Generate points along the great circle
- */
-GreatCircle.prototype.Arc = function (npoints, options) {
-    var first_pass = [];
-    if (!npoints || npoints <= 2) {
-        first_pass.push([this.start.lon, this.start.lat]);
-        first_pass.push([this.end.lon, this.end.lat]);
-    } else {
-        var delta = 1.0 / (npoints - 1);
-        for (var i = 0; i < npoints; ++i) {
-            var step = delta * i;
-            var pair = this.interpolate(step);
-            first_pass.push(pair);
-        }
-    }
-    /* partial port of dateline handling from:
-     gdal/ogr/ogrgeometryfactory.cpp
-
-     TODO - does not handle all wrapping scenarios yet
-     */
-    var bHasBigDiff = false;
-    var dfMaxSmallDiffLong = 0;
-    // from http://www.gdal.org/ogr2ogr.html
-    // -datelineoffset:
-    // (starting with GDAL 1.10) offset from dateline in degrees (default long. = +/- 10deg, geometries within 170deg to -170deg will be splited)
-    var dfDateLineOffset = options && options.offset ? options.offset : 10;
-    var dfLeftBorderX = 180 - dfDateLineOffset;
-    var dfRightBorderX = -180 + dfDateLineOffset;
-    var dfDiffSpace = 360 - dfDateLineOffset;
-
-    // https://github.com/OSGeo/gdal/blob/7bfb9c452a59aac958bff0c8386b891edf8154ca/gdal/ogr/ogrgeometryfactory.cpp#L2342
-    for (var j = 1; j < first_pass.length; ++j) {
-        var dfPrevX = first_pass[j - 1][0];
-        var dfX = first_pass[j][0];
-        var dfDiffLong = Math.abs(dfX - dfPrevX);
-        if (dfDiffLong > dfDiffSpace &&
-            ((dfX > dfLeftBorderX && dfPrevX < dfRightBorderX) || (dfPrevX > dfLeftBorderX && dfX < dfRightBorderX))) {
-            bHasBigDiff = true;
-        } else if (dfDiffLong > dfMaxSmallDiffLong) {
-            dfMaxSmallDiffLong = dfDiffLong;
-        }
-    }
-
-    var poMulti = [];
-    if (bHasBigDiff && dfMaxSmallDiffLong < dfDateLineOffset) {
-        var poNewLS = [];
-        poMulti.push(poNewLS);
-        for (var k = 0; k < first_pass.length; ++k) {
-            var dfX0 = parseFloat(first_pass[k][0]);
-            if (k > 0 && Math.abs(dfX0 - first_pass[k - 1][0]) > dfDiffSpace) {
-                var dfX1 = parseFloat(first_pass[k - 1][0]);
-                var dfY1 = parseFloat(first_pass[k - 1][1]);
-                var dfX2 = parseFloat(first_pass[k][0]);
-                var dfY2 = parseFloat(first_pass[k][1]);
-                if (dfX1 > -180 && dfX1 < dfRightBorderX && dfX2 == 180 &&
-                    k + 1 < first_pass.length &&
-                    first_pass[k - 1][0] > -180 && first_pass[k - 1][0] < dfRightBorderX) {
-                    poNewLS.push([-180, first_pass[k][1]]);
-                    k++;
-                    poNewLS.push([first_pass[k][0], first_pass[k][1]]);
-                    continue;
-                } else if (dfX1 > dfLeftBorderX && dfX1 < 180 && dfX2 == -180 &&
-                    k + 1 < first_pass.length &&
-                    first_pass[k - 1][0] > dfLeftBorderX && first_pass[k - 1][0] < 180) {
-                    poNewLS.push([180, first_pass[k][1]]);
-                    k++;
-                    poNewLS.push([first_pass[k][0], first_pass[k][1]]);
-                    continue;
-                }
-
-                if (dfX1 < dfRightBorderX && dfX2 > dfLeftBorderX) {
-                    // swap dfX1, dfX2
-                    var tmpX = dfX1;
-                    dfX1 = dfX2;
-                    dfX2 = tmpX;
-                    // swap dfY1, dfY2
-                    var tmpY = dfY1;
-                    dfY1 = dfY2;
-                    dfY2 = tmpY;
-                }
-                if (dfX1 > dfLeftBorderX && dfX2 < dfRightBorderX) {
-                    dfX2 += 360;
-                }
-
-                if (dfX1 <= 180 && dfX2 >= 180 && dfX1 < dfX2) {
-                    var dfRatio = (180 - dfX1) / (dfX2 - dfX1);
-                    var dfY = dfRatio * dfY2 + (1 - dfRatio) * dfY1;
-                    poNewLS.push([first_pass[k - 1][0] > dfLeftBorderX ? 180 : -180, dfY]);
-                    poNewLS = [];
-                    poNewLS.push([first_pass[k - 1][0] > dfLeftBorderX ? -180 : 180, dfY]);
-                    poMulti.push(poNewLS);
-                }
-                else {
-                    poNewLS = [];
-                    poMulti.push(poNewLS);
-                }
-                poNewLS.push([dfX0, first_pass[k][1]]);
-            } else {
-                poNewLS.push([first_pass[k][0], first_pass[k][1]]);
-            }
-        }
-    } else {
-        // add normally
-        var poNewLS0 = [];
-        poMulti.push(poNewLS0);
-        for (var l = 0; l < first_pass.length; ++l) {
-            poNewLS0.push([first_pass[l][0], first_pass[l][1]]);
-        }
-    }
-
-    var arc = new Arc(this.properties);
-    for (var m = 0; m < poMulti.length; ++m) {
-        var line = new LineString();
-        arc.geometries.push(line);
-        var points = poMulti[m];
-        for (var j0 = 0; j0 < points.length; ++j0) {
-            line.move_to(points[j0]);
-        }
-    }
-    return arc;
-};
-
-var arc = {};
-arc.Coord = Coord;
-arc.Arc = Arc;
-arc.GreatCircle = GreatCircle;
-
-/* harmony default export */ var action_arc = (arc);
-// CONCATENATED MODULE: ./src/action/trail.js
-
-
-
-
-const TrailStatus = {
-    START: 'start',
-    STOPED: 'stoped'
-};
-const GLOBAL = {
-    BACK_LIST: [],
-    NUM: 1,         // 多个终端时，终端的index
-    ZOOM: 3.0,
-    MIN_TIME: 0,
-    MAX_TIME: 0
-};
-let globalNum = 0,      // 轨迹的index
-    timer = null,
-    _timer = null,
-    $THIS = null;
-
-const TrailStatusParam = function () {
-    let status = TrailStatus.START;
-    this.getStatus = function () {
-        return status;
-    };
-    this.setStatus = function (st) {
-        status = st;
-    };
-    let time = null;
-    this.getTime = function () {
-        return time;
-    };
-    this.setTime = function (st) {
-        time = st;
-    };
-};
-
-const PlayTrail = function (opt_options) {
-    const _options = opt_options;
-    this.lineStyle = _options.lineStyle || new ol_default.a.style.Style({
-        stroke: new ol_default.a.style.Stroke({
-            color: '#0000FF',
-            width: 2
-        }),
-        fill: new ol_default.a.style.Fill({
-            color: '#0000FF'
-        }),
-    });
-    this.markStyle = _options.markStyle || new ol_default.a.style.Style({
-        image: new ol_default.a.style.Circle({
-            radius: 7,
-            snapToPixel: false,
-            fill: new ol_default.a.style.Fill({
-                color: 'red'
-            }),
-            stroke: new ol_default.a.style.Stroke({
-                color: 'white',
-                width: 2
-            })
-        })
-    });
-    this.duration = _options.duration;
-    this.flag = _options.flag;
-    this.pointsPerMs = 100.0 / this.duration;
-    this.pointsFeatureStore = [];
-    this.onPlayFinished = _options.onPlayFinished;
-    this.lineFeatures = [];
-    this.trailStatus = new TrailStatusParam();
-    this.pointsFeatureStore = _options.pointFeatures || {};
-    this.map = _options.map;
-    this._animatePoint = null;
-    $THIS = this;
-};
-
-/**
- * 轨迹渲染
- * @param event
- */
-PlayTrail.prototype.animateTrail = function (event) {
-    const vectorContext = event.vectorContext;
-    const frameState = event.frameState;
-    vectorContext.setStyle($THIS.lineStyle);
-
-    const features = $THIS.lineFeatures;
-    const zoom = $THIS.map.getView().getZoom();
-    // 箭头的高度
-    const unitDistance = 10000 * Math.pow(2, 5 - zoom);
-    const arrowHeight = 5 * unitDistance;
-    let lineLength = 0;
-
-    //轨迹暂停的时候所有播放的轨迹都
-    for (let i = 0; i < features.length; i++) {
-        for (let j = 0; j < features[i].length; j++) {
-            const feature = features[i][j];
-            if ($THIS.trailStatus.getStatus() === TrailStatus.STOPED) {
-                feature.set('start', feature.get('start') + (frameState.time - $THIS.trailStatus.getTime()));
-            }
-        }
-        lineLength += features[i].length;
-    }
-
-    for (let j = 0; j < features.length; j++) {
-        for (let i = 0; i < features[j].length; i++) {
-            const feature = features[j][i];
-            if (!feature.get('finished')) {
-                if (!feature.get('started')) {
-                    continue;
-                }
-                const coords = feature.getGeometry().getCoordinates();
-                if ($THIS.trailStatus.getStatus() === TrailStatus.STOPED) {
-                    $THIS.trailStatus.setTime(frameState.time);
-                }
-
-                const elapsedTime = frameState.time - feature.get('start');
-                const elapsedPoints = elapsedTime * $THIS.pointsPerMs;
-
-                const maxIndex = Math.min(elapsedPoints, coords.length);
-                const currentLine = new ol_default.a.geom.LineString(coords.slice(0, maxIndex));
-                vectorContext.drawGeometry(currentLine);
-
-                // 画箭头
-                const endIndex = Math.floor(Math.min(elapsedPoints, coords.length - 1));
-                if (endIndex > 2) {
-                    let mIndex = Math.max(0, endIndex - 1);
-                    mIndex = Math.floor(mIndex);
-                    if (endIndex > mIndex) {
-                        const arrow = common_utils.getArrow(coords[mIndex], coords[endIndex], arrowHeight);
-                        vectorContext.drawGeometry(arrow);
-                    }
-                }
-                if (elapsedPoints >= coords.length) {
-                    feature.set('finished', true);
-                    globalNum++;
-                    if (feature.secondLine) {
-                        const nextLineFeature = feature.secondLine;
-                        nextLineFeature.set('started', true);
-                        nextLineFeature.set('start', new Date().getTime());
-                    } else {
-                        const targetPoint = feature.get('targetPoint');
-                        targetPoint.trailStatus = TrailStatus.STOPED;
-                        const nextLineFeature = targetPoint.get('line');
-                        if (nextLineFeature) {
-                            nextLineFeature.set('started', true);
-                            nextLineFeature.set('start', new Date().getTime());
-                            const nextPoint = nextLineFeature.get('targetPoint');
-                            nextPoint.trailStatus = TrailStatus.START;
-                            $THIS.animatePoint(nextPoint, $THIS.duration + 500);
-                        } else {
-                            // 轨迹播放结束
-                            if (globalNum >= lineLength) {
-                                // 轨迹播放结束
-                                $THIS.onPlayFinished && $THIS.onPlayFinished({ pointCount: globalNum + 1 });
-                                globalNum = 0;
-                                clearInterval(timer);
-                                timer = null;
-                                $THIS.status = 'finished';
-                                break;
-                            }
-                        }
-                    }
-                }
-            } else {
-                const coors = feature.getGeometry().getCoordinates();
-                vectorContext.drawGeometry(new ol_default.a.geom.LineString(coors));
-                // 画箭头
-                const targetPoint = feature.get('targetPoint');
-                // const radius = targetPoint.getStyle().getImage().getRadius();
-                const radius = 7;
-                const distance = radius * unitDistance / 2;
-                const targetCoords = targetPoint.getGeometry().getCoordinates();
-                const halfLen = coors.length / 2;
-                let _index = coors.length - 1;
-                let _line;
-                for (_index = coors.length - 1; _index >= 0; --_index) {
-                    _line = new ol_default.a.geom.LineString([coors[_index], targetCoords]);
-                    if (distance < _line.getLength()) {
-                        break;
-                    }
-                }
-                if (_index < halfLen) {
-                    _index = halfLen;
-                }
-                if (feature.secondLine) continue;
-                // 画箭头
-                if (distance < _line.getLength()) {
-                    const rIdx = Math.max(0, _index - 1);
-                    const ratio = distance / _line.getLength();
-                    const arrowHead = [];
-                    arrowHead[0] = targetCoords[0] - (targetCoords[0] - coors[rIdx][0]) * ratio;
-                    arrowHead[1] = targetCoords[1] - (targetCoords[1] - coors[rIdx][1]) * ratio;
-                    const arrow = common_utils.getArrow(coors[rIdx], arrowHead, arrowHeight);
-                    vectorContext.drawGeometry(arrow);
-                } else {
-                    const arrowIdx = Math.max(0, _index);
-                    const rIdx = Math.max(0, arrowIdx - 1);
-                    if (arrowIdx > rIdx) {
-                        const arrow = common_utils.getArrow(coors[rIdx], coors[arrowIdx],
-                            arrowHeight);
-                        vectorContext.drawGeometry(arrow);
-                    }
-                }
-            }
-        }
-    }
-    clearInterval(_timer);
-    _timer = setTimeout(function () {
-        $THIS.map.render();
-    }, 20);
-};
-
-/**
- * 使点闪光
- * @param pointFeature 点
- * @param animateDuaration 单次时长
- */
-PlayTrail.prototype.animatePoint = function (pointFeature, animateDuaration) {
-    let start = new Date().getTime();
-    let listenerKey;
-    $THIS.map.un('postcompose', $THIS._animatePoint);
-    $THIS._animatePoint = function (event) {
-        if (pointFeature.trailStatus === TrailStatus.STOPED) {
-            ol_default.a.Observable.unByKey(listenerKey);
-            return;
-        }
-        const vectorContext = event.vectorContext;
-        const frameState = event.frameState;
-        const flashGeom = pointFeature.getGeometry().clone();
-        flashGeom.A = ol_default.a.proj.transform(pointFeature.coordinates, 'EPSG:4326', 'EPSG:3857');
-        const elapsed = frameState.time - start;
-        const elapsedRatio = elapsed / animateDuaration;
-        const radius = ol_default.a.easing.easeOut(elapsedRatio) * 25 + 3;
-        const opacity = ol_default.a.easing.easeOut(1 - elapsedRatio);
-
-        const style = new ol_default.a.style.Style({
-            image: new ol_default.a.style.Circle({
-                radius: radius,
-                snapToPixel: false,
-                stroke: new ol_default.a.style.Stroke({
-                    color: 'rgba(255,0,0,' + opacity + ')',
-                    width: 0.25 + opacity
-                })
-            })
-        });
-        vectorContext.setStyle(style);
-        vectorContext.drawGeometry(flashGeom);
-        if (elapsed > animateDuaration) {
-            if ($THIS.trailStatus.getStatus() === TrailStatus.STOPED) {
-                // 如果是暂停状态则继续动画
-                start = new Date().getTime();
-            }
-        }
-    };
-    listenerKey = $THIS.map.on('postcompose', $THIS._animatePoint);
-};
-
-/**
- * 播放轨迹
- */
-PlayTrail.prototype.doPlayTrail = function () {
-    $THIS.status = 'started';
-    const pointStore = $THIS.pointsFeatureStore;
-    for (let k = 0; k < pointStore.length; k++) {
-        if (pointStore[k].length < 2) {
-            pointStore.splice(k, 1);
-            k--;
-        }
-    }
-    if (pointStore.length === 0) return;
-    for (let k = 0; k < pointStore.length; k++) {
-        // 初始点
-        let startPoint = pointStore[k][0].coordinates,
-            endPoint;
-        if (pointStore[k].length > 1) {
-            const _lines = [];
-            for (let i = 1; i < pointStore[k].length; i++) {
-                endPoint = pointStore[k][i].coordinates;
-                const arcGenerator = new action_arc.GreatCircle(
-                    {x: startPoint[0], y: startPoint[1]},
-                    {x: endPoint[0], y: endPoint[1]}
-                );
-                // 把点往后移z
-                startPoint = endPoint;
-
-                const arcLine = arcGenerator.Arc(100, {
-                    offset: 20
-                });
-                arcLine.geometries.forEach(function (geometry, _idx) {
-                    const line = new ol_default.a.geom.LineString(geometry.coords);
-                    line.transform(ol_default.a.proj.get('EPSG:4326'), ol_default.a.proj.get('EPSG:3857'));
-                    const lineFeature = new ol_default.a.Feature({
-                        geometry: line,
-                        finished: false,
-                        started: false,
-                        targetPoint: pointStore[k][i]
-                    });
-                    if (_idx == 0) {
-                        if ('move' == $THIS.flag) {
-                            if (i == 1) {
-                                lineFeature.set('start', new Date().getTime());
-                                lineFeature.set('started', true);
-                                pointStore[k][i].trailStatus = TrailStatus.START;
-                                $THIS.animatePoint(pointStore[k][i],
-                                    $THIS.duration);
-                            }
-                        } else {
-                            if (i == 1 && k == 0) {
-                                lineFeature.set('start', new Date().getTime());
-                                lineFeature.set('started', true);
-                                pointStore[k][i].trailStatus = TrailStatus.START;
-                                $THIS.animatePoint(pointStore[k][i],
-                                    $THIS.duration);
-                            }
-                        }
-                        pointStore[k][i - 1].set('line', lineFeature);
-                    } else if (_idx == 1) {
-                        _lines[_lines.length - 1].secondLine = lineFeature;
-                    }
-                    _lines.push(lineFeature);
-                });
-            }
-            $THIS.lineFeatures.push(_lines);
-        }
-    }
-    $THIS.map.on('postcompose', $THIS.animateTrail);
-    $THIS.map.render();
-
-    // 多个轨迹时逐个播放
-    GLOBAL.NUM = 1;
-    if (timer === null) {
-        timer = setInterval(function () {
-            if (GLOBAL.NUM <= $THIS.lineFeatures.length - 1) {
-                if (GLOBAL.NUM <= $THIS.lineFeatures.length - 1) {
-                    if ($THIS.lineFeatures[GLOBAL.NUM].length > 0) {
-                        const feature = $THIS.lineFeatures[GLOBAL.NUM][0];
-                        feature.set('start', new Date().getTime());
-                        feature.set('started', true);
-                    }
-                    GLOBAL.NUM += 1;
-                }
-            }
-        }, 2000);
-    }
-};
-
-/**
- * 清除播放轨迹
- */
-PlayTrail.prototype.cleanTrailLines = function (num) {
-    const pointLength = $THIS.pointsFeatureStore.length;
-    $THIS.trailStatus.setStatus(TrailStatus.START);
-    let length = 0;
-    for (let i = pointLength - num; i < pointLength; i++) {
-        $THIS.pointsFeatureStore[i].trailStatus = TrailStatus.STOPED;
-        length += $THIS.pointsFeatureStore[i].length - 1;
-    }
-    $THIS.lineFeatures.splice(length, $THIS.lineFeatures.length);
-    $THIS.map.un('postcompose', $THIS.animateTrail);
-    $THIS.map.un('postcompose', $THIS._animatePoint);
-    $THIS.status = null;
-};
-
-/**
- * 暂停播放
- */
-PlayTrail.prototype.stopTrail = function () {
-    clearInterval(timer);
-    if ($THIS.trailStatus.getStatus() !== TrailStatus.STOPED) {
-        $THIS.trailStatus.setStatus(TrailStatus.STOPED);
-        $THIS.trailStatus.setTime(new Date().getTime());
-    }
-    $THIS.status = 'stopped';
-};
-
-/**
- * 继续播放
- */
-PlayTrail.prototype.continueTrail = function () {
-    $THIS.trailStatus.setStatus(TrailStatus.START);
-    timer = setInterval(function () {
-        if (GLOBAL.NUM <= $THIS.lineFeatures.length - 1) {
-            if ($THIS.lineFeatures[GLOBAL.NUM].length > 0) {
-                const feature = $THIS.lineFeatures[GLOBAL.NUM][0];
-                feature.set('start', new Date().getTime());
-                feature.set('started', true);
-            }
-            GLOBAL.NUM += 1;
-        }
-    }, 2000);
-    $THIS.status = 'started';
-};
-
-/**
- * 回放
- */
-PlayTrail.prototype.backTrail = function (time) {
-    const backTime = GLOBAL.MAX_TIME - parseInt(time);
-    for (let i = 0; i < $THIS.lineFeatures.length; i++) {
-        if ($THIS.lineFeatures[i].T.start > backTime) {
-            GLOBAL.BACK_LIST.push($THIS.lineFeatures[i]);
-            $THIS.lineFeatures.splice(i, 1);
-            i--;
-        }
-    }
-    $THIS.trailStatus.setStatus(TrailStatus.STOPED);
-    $THIS.trailStatus.setTime(new Date().getTime());
-};
-
-/**z
- * 回放
- */
-PlayTrail.prototype.runTrail = function (time) {
-    const backTime = GLOBAL.MIN_TIME - parseInt(time);
-    for (let i = 0; i < GLOBAL.BACK_LIST.length; i++) {
-        if (GLOBAL.BACK_LIST[i].T.start < backTime) {
-            $THIS.lineFeatures.push(GLOBAL.BACK_LIST[i]);
-        }
-    }
-    $THIS.trailStatus.setStatus(TrailStatus.STOPED);
-    $THIS.trailStatus.setTime(new Date().getTime());
-};
-
-/**
- * 格式化后台数据
- * @param data 轨迹播放后台数据
- */
-const formatData = (data) => {
-    const terminalArr = [];
-    const trailData = [];
-    const format = new ol_default.a.format.GeoJSON();
-    for (let i = 0, len = data.length; i < len; i++) {
-        const terminalId = data[i].prop_terminalId;
-        let terminalIndex = terminalArr.indexOf(terminalId);
-        if (terminalIndex < 0) {
-            terminalArr.push(terminalId);
-            terminalIndex = terminalArr.length - 1;
-            trailData[terminalIndex] = [];
-        }
-        let gps = data[i].gps;
-        gps = typeof (gps) === 'string' ? JSON.parse(gps) : gps;
-        const point = format.readFeature({
-            coordinates: gps,
-            type: 'Point'
-        }, {
-            featureProjection: 'EPSG:3857'
-        });
-        point.type = 'point';
-        point.trailStatus = TrailStatus.STOPED;
-        point.coordinates = gps;
-        point.coordinate = ol_default.a.proj.fromLonLat(gps);
-
-        trailData[terminalIndex].push(point);
-    }
-    return trailData;
-};
-
-/**
- * 创建 trail 对象
- * @param map
- * @param data
- * @param eventsHandler
- * @returns {PlayTrail}
- */
-/* harmony default export */ var trail = ((map, data, eventsHandler) => {
-    return new PlayTrail({
-        pointFeatures: formatData(data),
-        map: map,
-        duration: 1000,
-        flag: 'init',
-        onPlayFinished: eventsHandler.ontrailend
-    });
-});
-
-// CONCATENATED MODULE: ./src/view/pointModal.js
-
-
-// 创建地图点弹框覆盖物
-const getPointModal = (domId, options) => {
-    const id = domId || 'popup';
-    return new ol_default.a.Overlay({
-        element: document.getElementById(id),
-        autoPan: options.pointModal.autoPan,
-        autoPanAnimation: {
-            duration: 250
-        },
-        offset: [0, 0]
-    });
-};
-/* harmony default export */ var view_pointModal = (getPointModal);
 // CONCATENATED MODULE: ./node_modules/@turf/helpers/main.es.js
 /**
  * Earth Radius used with the Harvesine formula and approximates using a spherical (non-ellipsoid) Earth.
@@ -5263,6 +3842,927 @@ function bezier(line, options) {
 
 /* harmony default export */ var main_es = (bezier);
 
+// CONCATENATED MODULE: ./src/common/utils.js
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * 公共方法
+ */
+const utils = {
+    styleFunction: (feature, isHover) => {
+        const name = feature.get('name');
+        switch (name) {
+            case 'point':
+                const count = feature.get('aggreCount'),
+                    type = feature.get('type'),
+                    type_ope = feature.get('type_ope');
+                if (count > 1) {
+                    return utils.getJuheIconStyle(count, isHover);
+                } else {
+                    return utils.getSingleIconStyle(type, type_ope, isHover);
+                }
+                break;
+            case 'line':
+                return utils.getLineStyle(feature.get('label'), isHover);
+                break;
+        }
+    },
+    /**
+     * 聚合点样式
+     * len 聚合个数
+     * isHover
+     */
+    getJuheIconStyle: (len, isHover) => {
+        return new ol_default.a.style.Style({
+            image: new ol_default.a.style.Icon(({
+                color: isHover ? '#3da6f5' : '#F54336',
+                src: juhe_default.a,
+                anchor: [0.5, 1]
+            })),
+            text: new ol_default.a.style.Text({
+                text: len && len.toString(),
+                fill: new ol_default.a.style.Fill({
+                    color: '#fff'
+                }),
+                offsetY: -16,
+                scale: 0.9
+            })
+        });
+    },
+
+    /**
+     * 单点样式
+     * type: cr听音 sms短信 lu位置
+     * opType: unOperate未操作 operated已操作 attention预警  today 24小时
+     * isHover
+     */
+    getSingleIconStyle: (type, opType, isHover) => {
+        let src,
+            color = '#f00',
+            isAttention = opType === 'attention';
+        if (isHover) {
+            color = '#0096ff';
+        } else if (opType === 'operated') {
+            color = '#9fa2bd';
+        } else if (opType === 'unOperate') {
+            color = '#3db94c';
+        } else if (opType === 'attention') {
+            color = '#f00';
+        }
+
+        if (type === 'cr') {
+            src = isAttention ? cr_attention_default.a : cr_default.a;
+        } else if (type === 'lu') {
+            src = isAttention ? lu_attention_default.a : lu_default.a;
+        } else if (type === 'sms') {
+            src = isAttention ? sms_attention_default.a : sms_default.a;
+        }
+
+        if (opType.indexOf('today') > -1 || !type || !opType) {
+            return new ol_default.a.style.Style({
+                image: new ol_default.a.style.Icon(({
+                    color: color,
+                    src: circle_default.a,
+                    anchor: [0.5, 0.5]
+                }))
+            })
+        } else {
+            return new ol_default.a.style.Style({
+                image: new ol_default.a.style.Icon(({
+                    color: color,
+                    src: src,
+                    anchor: [0.5, 1]
+                }))
+            })
+        }
+    },
+
+    getCircleStyle: (label) => {
+        return new ol_default.a.style.Style({
+            image: new ol_default.a.style.Icon(({
+                color: '#3db94c',
+                src: circle_default.a,
+                anchor: [0.5, 0.5]
+            })),
+            text: new ol_default.a.style.Text({
+                text: label,
+                fill: new ol_default.a.style.Fill({
+                    color: '#3db94c'
+                }),
+                offsetY: 14
+            })
+        })
+    },
+
+    /**
+     * 区域样式
+     * @param type
+     * @param isHover
+     */
+    getAreaStyle: (type, isHover) => {
+        const isBigscreen = type && type.toLowerCase() === 'bigscreen';
+        return new ol_default.a.style.Style({
+            stroke: new ol_default.a.style.Stroke({
+                color: isBigscreen ? '#EF8F8F' : '#00B7EE',
+                width: isBigscreen && !isHover ? 1 : 2,
+                lineDash: isBigscreen ? [10, 10] : [0, 0]
+            }),
+            fill: new ol_default.a.style.Fill({
+                color: isHover ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0)'
+            })
+        })
+    },
+
+    /**
+     * 线样式
+     * @param text
+     * @param isHover
+     */
+    getLineStyle: (text, isHover) => {
+        return new ol_default.a.style.Style({
+            text: new ol_default.a.style.Text({
+                text: text,
+                font: '16px arial,sans-serif',
+                padding: [10, 10, 10, 10],
+                stroke: new ol_default.a.style.Stroke({   // 不加半透明stroke的话，点击文字背景不会选中
+                    color: 'rgba(255,255,255,.1)',
+                    width: 8
+                }),
+                fill: new ol_default.a.style.Fill({
+                    color: isHover ? '#0096ff' : '#3db94c'
+                }),
+                placement: 'line',
+                textBaseline: 'bottom',
+                offsetY: -2
+            }),
+            stroke: new ol_default.a.style.Stroke({
+                color: isHover ? '#0096ff' : '#3db94c',
+                width: 1
+            })
+        });
+    },
+
+    /**
+     * arrow style
+     * @param isHover
+     */
+    getArrowStyle: (isHover) => {
+        return new ol_default.a.style.Style({
+            stroke: new ol_default.a.style.Stroke({
+                color: isHover ? '#0096ff' : '#3db94c',
+                width: 2
+            }),
+            fill: new ol_default.a.style.Fill({
+                color: isHover ? '#0096ff' : '#3db94c'
+            })
+        });
+    },
+
+    /**
+     * 获取当前地图视口左上角和右下角的坐标
+     * @param map
+     */
+    getViewGps: (map) => {
+        let extent = map.getView().calculateExtent(map.getSize()),
+            //上左的坐标
+            getTopLeft = ol_default.a.proj.transform(ol_default.a.extent.getTopLeft(extent), 'EPSG:3857', 'EPSG:4326'),
+            //下右的坐标
+            getBottomRight = ol_default.a.proj.transform(ol_default.a.extent.getBottomRight(extent), 'EPSG:3857', 'EPSG:4326');
+        return [getTopLeft, getBottomRight];
+    },
+
+    /**
+     * 格式化区域的data
+     * @param data
+     */
+    formatAreaData: (data) => {
+        return data.map(item => {
+            if (item.areaType === '2' || item.areaType === 2) {
+                let center = item.center.split(',').map(str => parseFloat(str));
+                center = ol_default.a.proj.fromLonLat(center);
+                const location = {
+                    center: center,
+                    radius: item.radius * 1000
+                };
+                return Object.assign({}, item, {areaLocation: location});
+            } else {
+                const gpsList = item.areaLocation.split(',').map(str => parseFloat(str));
+                const location = utils.getCoordinates(gpsList).map(d => ol_default.a.proj.fromLonLat(d));
+                return Object.assign({}, item, {areaLocation: location});
+            }
+        })
+    },
+
+    /**
+     * 将坐标集合格式从 number[] 转换为 [number, number][]
+     * @param data  坐标集合  number[]
+     * @returns {Array}
+     */
+    getCoordinates: (data) => {
+        let coordinates = [];
+        let len = data.length;
+        // 矩形区域有时在项目中保存的只有左上角和右下角的坐标，兼容性考虑
+        if (len === 4) {
+            const [x1, y1, x2, y2] = data;
+            coordinates = [[x1, y1], [x1, y2], [x2, y2], [x2, y1], [x1, y1]];
+        } else {
+            // 如果 data 中的坐标数据不是闭合的（终点不等于起点）, 将其闭合
+            if (data[0] !== data[len - 2] || data[1] !== data[len - 1]) {
+                data.push(data[0]);
+                data.push(data[1]);
+                len = data.length;
+            }
+            for (let i = 0; i < len / 2; i++) {
+                coordinates[i] = [data[i * 2], data[i * 2 + 1]]
+            }
+        }
+
+        return coordinates;
+    },
+
+    /**
+     * coordinate转换为经纬度，经度可以大于180或小于-180 （toLonLat 会把不合法的经纬度换成合法的，画区超过地图边界时需要不合法坐标）
+     * @param coordinate
+     */
+    toGps: (coordinate) => {
+        let gps = ol_default.a.proj.toLonLat(coordinate);
+        if (coordinate[0] > 20037508.342789244) {
+            gps[0] = gps[0] + 360;
+        } else if (coordinate[0] < -20037508.342789244) {
+            gps[0] = gps[0] - 360;
+        }
+        return gps;
+    },
+
+    /**
+     * 获取地图中心点坐标，经纬度坐标或者投影坐标
+     * @param map
+     * @param type 'coordinate' 或 不填
+     * @returns {ol.Coordinate}
+     */
+    getCenter: (map, type) => {
+        const center = map.getView().getCenter();
+        if (type === 'coordinate') {
+            return center;
+        } else {
+            return ol_default.a.proj.toLonLat(center);
+        }
+    },
+
+    /**
+     * 设置地图中心点
+     * @param map
+     * @param gps
+     */
+    setCenter: (map, gps) => {
+        const center = ol_default.a.proj.fromLonLat([parseFloat(gps[0]), parseFloat(gps[1])]);
+        map.getView().setCenter(center);
+    },
+
+    /**
+     * 生成箭头
+     * @param rPoint 参照节点的位置（用于确定箭头的方向）
+     * @param endPoint 箭头的头的位置
+     * @param arrowHeight 箭头的高度
+     * @returns {ol.geom.Polygon}
+     */
+    getArrow: (rPoint, endPoint, arrowHeight) => {
+        //箭头底和高的交点位置
+        const mPoint = [];
+        //头与交点的位移差
+        let diffX, diffY;
+        //头与参照点的位移差
+        let rdiffX, rdiffY;
+
+        rdiffX = endPoint[0] - rPoint[0];
+        rdiffY = endPoint[1] - rPoint[1];
+        //头与参照点的距离
+        const rlength = Math.sqrt(rdiffX * rdiffX + rdiffY * rdiffY);
+        //头与交点的位移差
+        diffX = rdiffX * arrowHeight / rlength;
+        diffY = rdiffY * arrowHeight / rlength;
+
+        mPoint[0] = endPoint[0] - diffX;
+        mPoint[1] = endPoint[1] - diffY;
+        // 三角形箭头的底的一半长度
+        const halfBottomLen = arrowHeight / 3;
+        // 箭头的另外两个顶点
+        const point1 = [],
+            point2 = [];
+        const _x = halfBottomLen * Math.abs(diffY / arrowHeight);
+        const _y = halfBottomLen * Math.abs(diffX / arrowHeight);
+        if (diffY === 0) {
+            point1[0] = mPoint[0];
+            point1[1] = mPoint[1] - halfBottomLen;
+
+            point2[0] = mPoint[0];
+            point2[1] = mPoint[1] + halfBottomLen;
+        } else if (diffX === 0) {
+            point1[0] = mPoint[0] - halfBottomLen;
+            point1[1] = mPoint[1];
+
+            point2[0] = mPoint[0] + halfBottomLen;
+            point2[1] = mPoint[1];
+        } else if (diffX > 0 && diffY > 0 || diffX < 0 && diffY < 0) {
+            point1[0] = mPoint[0] + _x;
+            point1[1] = mPoint[1] - _y;
+
+            point2[0] = mPoint[0] - _x;
+            point2[1] = mPoint[1] + _y;
+        } else if (diffX < 0 && diffY > 0 || diffX > 0 && diffY < 0) {
+            point1[0] = mPoint[0] - _x;
+            point1[1] = mPoint[1] - _y;
+
+            point2[0] = mPoint[0] + _x;
+            point2[1] = mPoint[1] + _y;
+        }
+        return new ol_default.a.geom.Polygon([
+            [endPoint, point1, point2, endPoint]
+        ]);
+    },
+
+    // 根据起点和终点获取贝塞尔曲线
+    getBezierLine(p1, p2, curveness) {
+        const middle = [
+            (p1[0] + p2[0]) / 2 - (p1[1] - p2[1]) * curveness,
+            (p1[1] + p2[1]) / 2 - (p2[0] - p1[0]) * curveness
+        ];
+        const geoJson = {
+            "type": "Feature",
+            "properties": {},
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [p1, middle, p2]
+            }
+        };
+        const curved = main_es(geoJson);
+        return new ol_default.a.geom.LineString(curved["geometry"]["coordinates"]);
+    }
+};
+/* harmony default export */ var common_utils = (utils);
+// CONCATENATED MODULE: ./src/view/areaLayer.js
+
+
+
+/**
+ * 创建 area 右上角的按钮 overlay
+ * @param position  [[number,number],[number,number]]
+ * @param index  string
+ * @param showCancelBtn   boolean
+ * @param showSearchBtn   boolean
+ * @returns {ol.Overlay}
+ */
+const getBtnOverlay = (position, index, showCancelBtn, showSearchBtn) => {
+    const div = document.createElement('div');
+    div.innerHTML =
+        `<span id="${index}" class="overlay-btn-ct">
+            <span class="overlay-btn overlay-cancel ${!!showCancelBtn}"  data-id="${index}">X</span>
+            <span class="overlay-btn overlay-search ${!!showSearchBtn}"  data-id="${index}">⊙</span>
+        </span>`;
+    document.body.appendChild(div);
+
+    return new ol_default.a.Overlay({
+        position: position,
+        element: document.getElementById(index),
+        autoPan: true,
+        positioning: 'top-left',
+        offset: [0, -3],
+        stopEvent: false
+    });
+};
+
+/**
+ * 创建 area tooltip
+ * @param pos  [[number,number],[number,number]]
+ * @param index  string
+ * @param areaData  object
+ * @param overlayType  'normal' | 'bigscreen'
+ * @returns {ol.Overlay}
+ */
+const getInfoOverlay = (pos, index, areaData, overlayType) => {
+    let type = overlayType || '';
+    type = type.toLowerCase() === 'bigscreen' ? 'bigscreen' : 'normal';
+    const div = document.createElement('div');
+    div.innerHTML =
+        `<div id="${index}" class="ol-${type}-tooltip">
+            <div style="margin-top: 10px">Title:  ${areaData.areaName}</div>
+            <div style="margin-top: 10px">Description:  ${areaData.areaDetail}</div>
+        </div>`;
+    document.body.appendChild(div);
+
+    return new ol_default.a.Overlay({
+        position: pos,
+        element: document.getElementById(index),
+        autoPan: false,
+        positioning: 'top-left',
+        offset: [0, -3],
+        stopEvent: false
+    });
+};
+
+/**
+ * 获取圆形layer
+ * @param options
+ * @param geometryData
+ * @param index
+ * @param areaData
+ * @returns {ol.layer.Vector}
+ */
+const getCircleLayer = (options, geometryData, index, areaData) => {
+    let dataOverlay;
+    const feature = new ol_default.a.Feature({
+        name: 'area',
+        geometry: new ol_default.a.geom.Circle(geometryData.center, geometryData.radius)
+    });
+    const source = new ol_default.a.source.Vector({
+        features: [feature],
+        wrapX: false
+    });
+    const areaLayer = new ol_default.a.layer.Vector({
+        id: index,
+        source: source,
+        style: function () {
+            return common_utils.getAreaStyle(options.area.type);
+        }
+    });
+    if (areaData) {
+        dataOverlay = getInfoOverlay(geometryData.center, index, areaData, options.area.type);
+        dataOverlay.setOffset([15, 15]);
+        dataOverlay.targetFeature = feature;
+    }
+    areaLayer.dataOverlay = feature.dataOverlay = dataOverlay;
+    return areaLayer;
+};
+
+/**
+ * 获取多边形layer (包括矩形)
+ * @param options
+ * @param geometryData  顶点坐标的集合  number[]
+ * @param index
+ * @param areaData  可选
+ * @returns {ol.layer.Vector}
+ */
+const getLinesLayer = (options, geometryData, index, areaData) => {
+    let btnOverlay, dataOverlay;
+    const topRight = geometryData[3] || geometryData[0];
+    const areaOption = options.area;
+
+    const geojsonObject = {
+        'type': 'FeatureCollection',
+        'crs': { 'type': 'name', 'properties': { 'name': 'EPSG:3857' } },
+        'features': [{
+            'type': 'Feature',
+            'geometry': {
+                'type': 'Polygon',
+                'coordinates': [geometryData]
+            }
+        }]
+    };
+    const features = (new ol_default.a.format.GeoJSON()).readFeatures(geojsonObject);
+    features.forEach(feature => feature.set('name', 'area'));
+    const vectorSource = new ol_default.a.source.Vector({
+        features: features,
+        wrapX: false
+    });
+
+    // 若显示取消和搜索按钮，添加overlay
+    if (areaOption.showCancelBtn || areaOption.showSearchBtn) {
+        btnOverlay = getBtnOverlay(topRight, index, areaOption.showCancelBtn, areaOption.showSearchBtn);
+    }
+    // 若hover时显示详情框，添加overlay
+    if (areaData) {
+        dataOverlay = getInfoOverlay(topRight, index, areaData, areaOption.type);
+        dataOverlay.setOffset([15, 15]);
+        dataOverlay.targetFeature = features[0];
+    }
+
+    const areaLayer = new ol_default.a.layer.Vector({
+        id: index,
+        source: vectorSource,
+        style: function () {
+            return common_utils.getAreaStyle(areaOption.type);
+        }
+    });
+
+    areaLayer.dataOverlay = features[0].dataOverlay = dataOverlay;
+    areaLayer.btnOverlay = btnOverlay;
+    return areaLayer;
+};
+
+/**
+ * 创建选区图层
+ * @param options
+ * @param geometryData  图形数据
+ * @param index    string
+ * @param areaData object  可选(手动画区后的展示不传此项)
+ * @returns {ol.layer.Vector}
+ */
+const getAreaLayer = (options, geometryData, index, areaData) => {
+    let layer;
+    // 圆形
+    if (geometryData.radius) {
+        layer = getCircleLayer(options, geometryData, index, areaData);
+        layer.featureType = 'circle';
+    } else {
+        layer = getLinesLayer(options, geometryData, index, areaData);
+        layer.featureType = 'polygon';
+    }
+    return layer;
+};
+/* harmony default export */ var view_areaLayer = (getAreaLayer);
+// CONCATENATED MODULE: ./src/action/draw.js
+
+
+
+
+let draw_areaLayer,
+    drawNum = 0;
+
+/**
+ * 创建矩形 draw 时需要定义geometryFunction
+ * @param coordinates
+ * @param geometry
+ * @returns {*}
+ */
+function geometryFunction(coordinates, geometry) {
+    if (!geometry) {
+        geometry = new ol_default.a.geom.Polygon(null);
+    }
+    let minX = Math.min(coordinates[0][0], coordinates[1][0]),
+        maxX = Math.max(coordinates[0][0], coordinates[1][0]),
+        minY = Math.min(coordinates[0][1], coordinates[1][1]),
+        maxY = Math.max(coordinates[0][1], coordinates[1][1]);
+    // 设置左上角为第一个点
+    geometry.setCoordinates([
+        [[minX, maxY], [minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY]]
+    ]);
+    return geometry;
+}
+
+/**
+ * 获取 draw 出的图形的顶点坐标集合
+ * @param feature
+ * @returns [] | {}
+ */
+function getGeomData(feature) {
+    const geometry = feature.getGeometry();
+    // 圆形
+    if (geometry.getType() === 'Circle') {
+        const center = geometry.getCenter(),
+            radius = geometry.getRadius();
+        return { center: center, radius: radius };
+    } else {
+        return geometry.getCoordinates()[0];
+    }
+}
+
+/**
+ * 创建 Draw 对象
+ * @param type
+ * @param options
+ * @param map
+ * @param eventsHandler
+ * @returns {ol.interaction.Draw}
+ */
+const getDraw = (type, options, map, eventsHandler) => {
+    const drawOption = options.draw;
+    let draw;
+
+    if (!drawOption.showMultiArea && draw_areaLayer) {
+        map.removeLayer(draw_areaLayer);
+        draw_areaLayer.btnOverlay && map.removeOverlay(draw_areaLayer.btnOverlay);
+    }
+
+    switch (type) {
+    case 'circle':
+        draw = new ol_default.a.interaction.Draw({ type: 'Circle' });
+        break;
+    case 'polygon':
+        draw = new ol_default.a.interaction.Draw({ type: 'Polygon' });
+        break;
+    default:
+        draw = new ol_default.a.interaction.Draw({
+            type: ('LineString'),
+            geometryFunction: geometryFunction,
+            maxPoints: 2
+        });
+        break;
+    }
+    draw.type = type;
+
+    draw.on('drawstart', () => {
+        eventsHandler.ondrawstart();
+    });
+    draw.on('drawend', (ev) => {
+        let emitData;         // ondrawend 事件的参数
+        const geometryData = getGeomData(ev.feature);     // 图形的数据
+        draw.isDrawing = false;
+        map.removeInteraction(draw);
+
+        if (type === 'box') {
+            // 左上角和右下角坐标
+            emitData = [common_utils.toGps(geometryData[0]), common_utils.toGps(geometryData[2])];
+        } else if (type === 'circle') {
+            // 中心点和半径（单位千米）
+            emitData = {
+                center: common_utils.toGps(geometryData.center),
+                radius: geometryData.radius / 1000
+            }
+        } else {
+            // 所有坐标
+            emitData = geometryData.map(coordinate => common_utils.toGps(coordinate));
+        }
+
+        eventsHandler.ondrawend(emitData);
+
+        // 框选完成后是否显示选框
+        if (drawOption.showArea) {
+            draw_areaLayer = view_areaLayer(options, geometryData, 'draw' + drawNum);
+            draw_areaLayer.gpsData = emitData;
+            map.addLayer(draw_areaLayer);
+            if (draw_areaLayer.btnOverlay) {
+                map.addOverlay(draw_areaLayer.btnOverlay);
+            }
+            drawNum++;
+        }
+    });
+    return draw;
+};
+/* harmony default export */ var action_draw = (getDraw);
+// CONCATENATED MODULE: ./src/view/pointLayer.js
+
+
+/**
+ * 点图层
+ * @param options
+ * @returns {ol.layer.Vector}
+ */
+const getPointLayer = (options) => {
+    const pointFeatures = [];
+    const data = options.data;
+    const len = data.length;
+    for (let i = 0; i < len; i++) {
+        const item = data[i];
+        let GPS = (item.aggreCount > 1 || !item.gps) ? item.gpsPosition : item.gps;
+        GPS = typeof(GPS) === 'string' ? JSON.parse(GPS) : GPS;
+        if (GPS[0] < -180 || GPS[0] > 180 || GPS[1] < -90 || GPS[1] > 90) {
+            continue;
+        }
+        const feature = new ol_default.a.Feature({
+            name: 'point',
+            id: item.prop_crId || item.id, // 话单id
+            aggreGPS: GPS, //原始的坐标
+            aggreCount: item.aggreCount,
+            type: item.prop_dataType,
+            type_ope: item.type,
+            pointGPS: ol_default.a.proj.fromLonLat(GPS),
+            geometry: new ol_default.a.geom.Point(ol_default.a.proj.fromLonLat(GPS))
+        });
+        feature.setStyle(common_utils.styleFunction(feature));
+        pointFeatures.push(feature);
+    }
+
+    const source = new ol_default.a.source.Vector({
+        features: pointFeatures,
+        wrapX: false
+    });
+
+    return new ol_default.a.layer.Vector({
+        source: source,
+        wrapX: false,
+        zIndex: 9
+    });
+};
+
+/* harmony default export */ var pointLayer = (getPointLayer);
+// CONCATENATED MODULE: ./src/action/trail.js
+
+
+
+class trail_Trail {
+    constructor(map, data, eventsHandler) {
+        this.map = map;
+        this.ontrailend = eventsHandler.ontrailend;
+        this.status = null;             // 轨迹播放的状态, 'started':已开始, 'stopped':已暂停, 'finished': 已结束
+        this.data = this.formatData(data);    // 所有的gps数据，二维数组，按terminalId分组  [[gps]]
+        this.lines = [];                // 所有的线，二维数组，按terminalId分组 [[line]]
+        this.duration = 1800;           // 单条线的动画时间
+        this.curveness = 0.1;           // 贝塞尔曲线的弯曲程度，0~1，值越大越弯曲
+        this.startTime = 0;             // 动画开始的时间
+        this.elapsed = 0;               // 动画已执行的时长
+        this.elapsedWhenPaused = 0;     // 暂停时动画已执行的时长
+        this.continuedTime = 0;         // 暂停后，点击继续播放时的时间
+        this.animateFun = (ev) => this.animate(ev);    // 渲染的回调（用箭头函数确保animate中的this指向）
+        this.isPaused = false;          // 是否已暂停
+    }
+
+    start() {
+        this.getLines();
+        this.startTime = new Date().getTime();
+        this.map.on('postcompose', this.animateFun);
+        this.map.render();
+        this.status = 'started';
+    }
+
+    clear() {
+        this.map.un('postcompose', this.animateFun);
+    }
+
+    // 暂停轨迹播放
+    stopTrail() {
+        if (!this.isPaused) {
+            this.elapsedWhenPaused = this.elapsed;
+            this.isPaused = true;
+            this.status = 'stopped';
+        }
+    }
+
+    // 继续轨迹播放
+    continueTrail() {
+        if (this.isPaused === true) {
+            this.continuedTime = new Date().getTime();
+            this.isPaused = false;
+            this.status = 'started';
+        }
+    }
+
+    // 将gps转换为ol.geom.LineString
+    getLines() {
+        const data = this.data;
+        const lines = [];
+        for(let i = 0, l = data.length; i < l; i++) {
+            const item = data[i];
+            const len = item.length;
+            if (len > 1) {
+                lines[i] = [];
+                for (let j = 0; j < len - 1; j++) {
+                    const start = ol_default.a.proj.fromLonLat(item[j]);
+                    const end = ol_default.a.proj.fromLonLat(item[j + 1]);
+                    const line = common_utils.getBezierLine(start, end, this.curveness);
+                    lines[i].push(line);
+                }
+            }
+        }
+        this.lines = lines;
+    }
+
+    // 开始动画
+    animate(event) {
+        const vectorContext = event.vectorContext;
+        const frameState = event.frameState;
+        const zoom = this.map.getView().getZoom();
+        const unitDistance = 10000 * Math.pow(2, 5 - zoom);
+        const arrowHeight = 5 * unitDistance;
+        const lines = this.lines;
+        if (!this.isPaused) {
+            this.elapsed = frameState.time - this.startTime;
+            // 若执行过暂停和继续播放
+            if (this.continuedTime) {
+                this.elapsed = this.elapsedWhenPaused + (frameState.time - this.continuedTime);
+            }
+        }
+
+        vectorContext.setStyle(new ol_default.a.style.Style({
+            stroke: new ol_default.a.style.Stroke({
+                color: '#0096ff',
+                width: 2
+            }),
+            fill: new ol_default.a.style.Fill({
+                color: '#0096ff'
+            })
+        }));
+        // 渲染所有终端轨迹和箭头(不同终端轨迹会隔2s再播放下一个)
+        for (let i = 0, l = lines.length; i < l; i++) {
+            const terminalLines = lines[i];                            // 终端轨迹的所有线
+            const elapsed = this.elapsed - i * 2000;                   // 该终端的轨迹已经播放的时长（隔2s播放下一个）
+            const lineIdx = Math.floor(elapsed / this.duration);       // 该终端正在播放第几条线
+            const ratio = (elapsed % this.duration) / this.duration;   // 该终端正在播放的线已渲染的比例
+            // 渲染单个终端的所有轨迹线
+            for (let _i = 0, _l = terminalLines.length; _i < _l; _i++) {
+                // 已播放过的线的播放比例为1，正在播放的为ratio, 还未播放的为0
+                const lineRatio = _i > lineIdx ? 0 : (_i === lineIdx ? ratio : 1);
+                if (lineRatio > 0) {
+                    this.drawSingleLineAndArrow(vectorContext, terminalLines[_i], lineRatio, arrowHeight);
+                } else {
+                    break;
+                }
+                // 最后一个终端的最后一条轨迹线若播放完成，则整个轨迹播放完成
+                if ((i === l - 1) && (_i === _l - 1) && (lineRatio === 1)) {
+                    if(this.ontrailend && this.status !== 'finished') {
+                        this.ontrailend();
+                    }
+                    this.status = 'finished';
+                }
+            }
+        }
+        // 渲染闪光点(轨迹暂停时，闪光点不会暂停)
+        for (let i = 0, l = lines.length; i < l; i++) {
+            let ratio;
+            const terminalLines = lines[i];
+            const elapsed = this.elapsed - i * 2000;
+            const lineIdx = Math.floor(elapsed / this.duration);     // 计算轨迹已经到了第几条线，用来确定闪光点的位置
+            ratio = (elapsed % this.duration) / this.duration;       // 计算闪光点已渲染的比例
+            if (this.isPaused) {
+                const _elapsed = event.frameState.time - this.startTime - i * 2000;
+                ratio = (_elapsed % this.duration) / this.duration;  // 即使暂停，闪光点仍然继续执行动画
+            }
+            for (let _i = 0, _l = terminalLines.length; _i < _l; _i++) {
+                if (_i === lineIdx) {
+                    this.drawPoint(vectorContext, terminalLines[_i], ratio);
+                }
+            }
+        }
+        // 触发地图重新渲染
+        this.map.render();
+    }
+
+    // 渲染单条线的轨迹，箭头
+    drawSingleLineAndArrow(vectorContext, line, ratio, arrowHeight) {
+        const coords = line.getCoordinates();
+        const index = Math.floor((coords.length - 1) * ratio);
+
+        // 渲染单条轨迹线
+        const _coords = coords.slice(0, index + 1);
+        const _line = new ol_default.a.geom.LineString(_coords);
+        vectorContext.drawGeometry(_line);
+
+        // 渲染单个箭头
+        if (index > 10) {
+            const start = coords[index - 1];
+            const end = coords[index];
+            const arrow = common_utils.getArrow(start, end, arrowHeight);
+            vectorContext.drawGeometry(arrow);
+        }
+    }
+
+    // 渲染单个闪光点
+    drawPoint(vectorContext, line, ratio) {
+        const coords = line.getCoordinates();
+        const radius = ol_default.a.easing.easeOut(ratio) * 25 + 3;
+        const opacity = ol_default.a.easing.easeOut(1 - ratio);
+        const cirCleStyle = new ol_default.a.style.Style({
+            image: new ol_default.a.style.Circle({
+                radius: radius,
+                snapToPixel: false,
+                stroke: new ol_default.a.style.Stroke({
+                    color: 'rgba(255,0,0,' + opacity + ')',
+                    width: 0.25 + opacity
+                })
+            })
+        });
+        vectorContext.setStyle(cirCleStyle);
+        const point = new ol_default.a.geom.Point(coords[coords.length - 1]);
+        vectorContext.drawGeometry(point);
+    }
+
+    /**
+     * 格式化data，按terminalId分组，将gps转化为二维数组
+     * @param data {[Object]}
+     * @returns {[[[number,number]]]}
+     */
+    formatData(data) {
+        const trailData = {};
+        for (let i = 0, l = data.length; i < l; i++) {
+            const item = data[i];
+            const gps = item['gps'];
+            const gpsArr = typeof (gps) === 'string' ? JSON.parse(gps) : gps;
+            const terminalId = item['prop_terminalId'];
+            const terminalData = trailData[terminalId];
+            if (!terminalData) {
+                trailData[terminalId] = [gpsArr];
+            } else {
+                terminalData.push(gpsArr);
+            }
+        }
+        return Object.values(trailData);
+    }
+}
+
+// CONCATENATED MODULE: ./src/view/pointModal.js
+
+
+// 创建地图点弹框覆盖物
+const getPointModal = (domId, options) => {
+    const id = domId || 'popup';
+    return new ol_default.a.Overlay({
+        element: document.getElementById(id),
+        autoPan: options.pointModal.autoPan,
+        autoPanAnimation: {
+            duration: 250
+        },
+        offset: [0, 0]
+    });
+};
+/* harmony default export */ var view_pointModal = (getPointModal);
 // CONCATENATED MODULE: ./src/action/effectLine.js
 
 
@@ -5296,11 +4796,12 @@ class effectLine_EffectLine {
 
     // 获取features 和 layer
     getFeaturesAndLayer() {
+        // 获取line features
         const lineData = this.lineData;
         for (let i = 0, l = lineData.length; i < l; i++) {
             const item = lineData[i];
             const gps = item.gps;
-            const line = this.getBezierLine(ol_default.a.proj.fromLonLat(gps[0]), ol_default.a.proj.fromLonLat(gps[1]));
+            const line = common_utils.getBezierLine(ol_default.a.proj.fromLonLat(gps[0]), ol_default.a.proj.fromLonLat(gps[1]), this.curveness);
 
             const label = String(item.label);
             const lineFeature = new ol_default.a.Feature({
@@ -5313,6 +4814,7 @@ class effectLine_EffectLine {
             lineFeature.setStyle(lineStyle);
             this.lineFeatures.push(lineFeature);
         }
+        // 获取point features
         const pointData = this.pointData;
         for (let i = 0, l = pointData.length; i < l; i++) {
             const item = pointData[i];
@@ -5325,6 +4827,7 @@ class effectLine_EffectLine {
             pointFeature.setStyle(pointStyle);
             this.pointFeatures.push(pointFeature);
         }
+        // 获取layer
         this.layer = new ol_default.a.layer.Vector({
             source: new ol_default.a.source.Vector({
                 features: this.lineFeatures.concat(this.pointFeatures),
@@ -5381,24 +4884,6 @@ class effectLine_EffectLine {
         // 触发地图重新渲染
         this.map.render();
     }
-
-    // 根据起点和终点获取贝塞尔曲线
-    getBezierLine(p1, p2) {
-        const middle = [
-            (p1[0] + p2[0]) / 2 - (p1[1] - p2[1]) * this.curveness,
-            (p1[1] + p2[1]) / 2 - (p2[0] - p1[0]) * this.curveness
-        ];
-        const geoJson = {
-            "type": "Feature",
-            "properties": {},
-            "geometry": {
-                "type": "LineString",
-                "coordinates": [p1, middle, p2]
-            }
-        };
-        const curved = main_es(geoJson);
-        return new ol_default.a.geom.LineString(curved["geometry"]["coordinates"]);
-    }
 }
 
 /* harmony default export */ var effectLine = (effectLine_EffectLine);
@@ -5411,8 +4896,8 @@ class effectLine_EffectLine {
  */
  class events_Events {
     constructor(map, options, eventsHandler) {
-        this.map = map;
-        this.options = options;
+        this.map = map;          // 地图对象
+        this.options = options;  // 配置项
         this.eventsHandler = eventsHandler;
         this.lastClick = null;   // 上一次点击的点或线
         this.lastZoom = null;    // 缩放前的层级
@@ -5512,7 +4997,7 @@ class effectLine_EffectLine {
         const data = {
             coords: [start, middle, end],
             feature: feature
-        }
+        };
         this.lastClick = feature;
         this.eventsHandler.onlineclick(data);
     }
@@ -5694,22 +5179,24 @@ class src_OlMap {
         this.eventsHandler = new EventsHandler();
         this.ol = ol_default.a;
         this.options = {
-            useOSM: false,
-            mapUrl: '',
-            tileLayer: '',
-            mapCenter: [97.03125, 29.362721750200926],
-            zoom: 3,
-            data: [],
-            draw: {},
-            pointModal: {
+            useOSM: false,           // 是否使用在线的OSM
+            mapUrl: '',              // 后台 geo server url （useOSM为false时生效）
+            tileLayer: '',           // 后台 geo server map layer
+            mapCenter: [97.03125, 29.362721750200926],      // 地图默认中心点
+            zoom: 3,                 // 地图默认zoom层级
+            data: [],                // 地图点数据
+            draw: {},                // 画区相关配置项
+            pointModal: {            // 点详情框的配置项
                 autoClose: 'zoom'
-            }
+            },
+            effectLine: {}
         };
-        this.heatLayer = null;
-        this.pointLayer = null;
-        this.pointModal = null;
-        this.trail = null;
-        this.draw = null;
+        this.heatLayer = null;       // 热力图层
+        this.pointLayer = null;      // 点图层
+        this.pointModal = null;      // 点详情框
+        this.trail = null;           // 通话轨迹对象
+        this.effectLine = null;      // 线动画对象
+        this.draw = null;            // 画区交互对象
     }
 
     setOption(opts) {
@@ -5722,7 +5209,7 @@ class src_OlMap {
             this.map.on('moveend', (ev) => this.events.dragAndMove(ev, this.pointModal));
             this.map.addInteraction(this.events.getSelectInteraction());
         }
-        this.trail && this.trail.cleanTrailLines();
+        this.trail && this.trail.clear();
         this.trail = null;
     }
 
@@ -5741,7 +5228,7 @@ class src_OlMap {
     removeAllFeature() {
         this.map.removeLayer(this.heatLayer);
         this.map.removeLayer(this.pointLayer);
-        this.trail && this.trail.cleanTrailLines();
+        this.trail && this.trail.clear();
         this.effectLine && this.effectLine.clear();
     }
 
@@ -5787,10 +5274,10 @@ class src_OlMap {
      */
     startTrail() {
         if (this.trail) {
-            this.trail.cleanTrailLines();
+            this.trail.clear();
         }
-        this.trail = this.trail || trail(this.map, this.options.data, this.eventsHandler);
-        this.trail.doPlayTrail();
+        this.trail = new trail_Trail(this.map, this.options.data, this.eventsHandler);
+        this.trail.start();
         if (this.heatLayer) {
             this.map.removeLayer(this.heatLayer);
             this.map.removeLayer(this.pointLayer);
@@ -5828,7 +5315,7 @@ class src_OlMap {
 
     /**
      * 开始画区
-     * @param type   box,circle,polygon
+     * @param type   'box','circle','polygon'
      */
     startDraw(type) {
         type = type || 'box';
@@ -5926,7 +5413,7 @@ class src_OlMap {
 }
 const olMap = {
     init: domId => new src_OlMap(domId)
-}
+};
 window.olMap = olMap;
 /* harmony default export */ var src_0 = __webpack_exports__["default"] = (olMap);
 
